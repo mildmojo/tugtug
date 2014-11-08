@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 public class CameraController : MonoBehaviour {
-	[HideInInspector] [NonSerializable]
+	[HideInInspector] [System.NonSerialized]
 	public List<GameObject> Players = new List<GameObject>();
 	// Use this for initialization
 	void Start () {
@@ -18,6 +18,6 @@ public class CameraController : MonoBehaviour {
 	}
 
 	GameObject getFrontPlayer() {
-		return Players.Max (player => player.GetComponent<PlayerManager>().distanceTraveled);
+		return Players.OrderByDescending(player => player.GetComponent<PlayerManager>().distanceTraveled).FirstOrDefault();
 	}
 }
