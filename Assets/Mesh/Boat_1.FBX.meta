@@ -21,6 +21,7 @@ ModelImporter:
     100030: B_1_left_Wheel001
     100032: B_1_right_Stack
     100034: B_1_Rutter
+    100036: B_1_right_Wheel
     400000: //RootNode
     400002: Box001
     400004: Box003
@@ -39,6 +40,7 @@ ModelImporter:
     400030: B_1_left_Wheel001
     400032: B_1_right_Stack
     400034: B_1_Rutter
+    400036: B_1_right_Wheel
     2300000: Box001
     2300002: Box003
     2300004: Box004
@@ -54,6 +56,9 @@ ModelImporter:
     2300024: B_1_left_Wheel001
     2300026: B_1_right_Stack
     2300028: B_1_Rutter
+    2300030: B_1_right_Wheel
+    2300032: //RootNode
+    2300034: B_1_Flag
     3300000: Box001
     3300002: Box003
     3300004: Box004
@@ -69,6 +74,9 @@ ModelImporter:
     3300024: B_1_left_Wheel001
     3300026: B_1_right_Stack
     3300028: B_1_Rutter
+    3300030: B_1_right_Wheel
+    3300032: //RootNode
+    3300034: B_1_Flag
     4300000: Box001
     4300002: Cylinder003
     4300004: Cylinder004
@@ -86,7 +94,9 @@ ModelImporter:
     4300028: B_1_Flag
     4300030: B_1_right_Stack
     4300032: B_1_left_Wheel001
+    4300034: B_1_right_Wheel
     9500000: //RootNode
+    11100000: //RootNode
     13700000: Box005
     13700002: B_1_Flag
   materials:
@@ -140,6 +150,6 @@ ModelImporter:
     feetSpacing: 0
     rootMotionBoneName: 
   lastHumanDescriptionAvatarSource: {instanceID: 0}
-  animationType: 2
+  animationType: 0
   additionalBone: 0
   userData: 

@@ -8,10 +8,12 @@ public class BoatMovementComponent : MonoBehaviour {
 	public float hoverForce = 65f;
 	public float hoverHeight = 3.5f;
 	public LayerMask hoverMask;
+	public GameObject[] Wheels;
+	public GameObject Rutter;
+	public GameObject Flag;
 	private float powerInput;
 	private float turnInput;
 	private Rigidbody carRigidbody;
-	
 	
 	void Awake () 
 	{
@@ -26,21 +28,22 @@ public class BoatMovementComponent : MonoBehaviour {
 	
 	void FixedUpdate()
 	{
-		Ray ray = new Ray (transform.position, -transform.up);
+		Ray ray = new Ray (transform.position, -Vector3.up);
 		RaycastHit hit;
-		
+
+		Debug.DrawRay(transform.position, -Vector3.up * hoverHeight, Color.red);
+
 		if (Physics.Raycast(ray, out hit, hoverHeight, hoverMask))
 		{
-			Debug.Log(hit.collider.gameObject);
-			Debug.DrawRay(transform.position, -Vector3.up * hoverHeight, Color.red);
-			
+			//Debug.Log(hit.collider.gameObject);
+
 			float proportionalHeight;
 			float heightpercent = (hoverHeight - hit.distance) / hoverHeight;
 			//Debug.Log(rigidbody.velocity.y);
 			if (rigidbody.velocity.y <= 0)
 			{
 				proportionalHeight = Mathf.Clamp(-rigidbody.velocity.y / 5f, 0f, 1f) + heightpercent;
-				Debug.Log(proportionalHeight + " " + rigidbody.velocity.y + " " + heightpercent);
+				//Debug.Log(proportionalHeight + " " + rigidbody.velocity.y + " " + heightpercent);
 			}
 			else
 			{
@@ -53,13 +56,25 @@ public class BoatMovementComponent : MonoBehaviour {
 		}
 		else
 		{
-			Debug.Log("done");
+			//Debug.Log("done");
 			//Vector3 appliedHoverForce = -Vector3.up * hoverForce / 10f;
 			//carRigidbody.AddForce(appliedHoverForce, ForceMode.Force);
 		}
 		
 		carRigidbody.AddRelativeForce(0f, 0f, powerInput * speed);
 		carRigidbody.AddRelativeTorque(0f, turnInput * turnSpeed, 0f);
-		
+
+		for (int i = 0; i < Wheels.Length; i++)
+		{
+			Wheels[i].transform.Rotate(0, powerInput, 0);
+		}
+		Quaternion rot = Quaternion.identity;
+		rot.eulerAngles = new Vector3(0, 0, 45 * -turnInput);
+		Rutter.transform.localRotation = rot;
+
+		rot = Quaternion.identity;
+		rot.eulerAngles = new Vector3(90, 0, 45 * -turnInput);
+		Flag.transform.localRotation = rot;
+
 	}
 }
