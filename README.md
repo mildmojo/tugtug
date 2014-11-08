@@ -1,4 +1,4 @@
 tugtug
 ======
 
-Riverboat racing game for the Lexitron.
+Riverboat racing game for the Lexitron
