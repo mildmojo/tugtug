@@ -9,7 +9,7 @@ public class BoatMovementComponent : MonoBehaviour {
 	public float hoverHeight = 3.5f;
 	public LayerMask hoverMask;
 	public GameObject[] Wheels;
-	public GameObject Rutter;
+	public GameObject[] Rutters;
 	public GameObject Flag;
 	public string HorizontalAxis = "Horizontal";
 	public string VerticalAxis = "Vertical";
@@ -68,21 +68,21 @@ public class BoatMovementComponent : MonoBehaviour {
 
 		for (int i = 0; i < Wheels.Length; i++)
 		{
-			Wheels[i].transform.Rotate(0, powerInput, 0);
+			Wheels[i].transform.Rotate(0, 0, -powerInput);
 		}
 
 		Quaternion rot = Quaternion.identity;
 
-		if (Rutter != null)
+		for (int i = 0; i < Rutters.Length; i++)
 		{
-			rot.eulerAngles = new Vector3(0, 0, 45 * -turnInput);
-			Rutter.transform.localRotation = rot;
+			rot.eulerAngles = new Vector3(0, 45 * -turnInput, 0);
+			Rutters[i].transform.localRotation = rot;
 		}
 
 		if (Flag != null)
 		{
 			rot = Quaternion.identity;
-			rot.eulerAngles = new Vector3(90, 0, 45 * -turnInput);
+			rot.eulerAngles = new Vector3(0, 45 * turnInput, 0);
 			Flag.transform.localRotation = rot;
 		}
 	}
