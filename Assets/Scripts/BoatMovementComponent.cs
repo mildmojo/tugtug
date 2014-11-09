@@ -16,16 +16,47 @@ public class BoatMovementComponent : MonoBehaviour {
 	private float powerInput;
 	private float turnInput;
 	private Rigidbody carRigidbody;
-	
+
+	private KeyCombo RightTurn = new KeyCombo(new string[] {"down", "left", "up", "right"});
+	private KeyCombo LeftTurn = new KeyCombo(new string[] {"down", "right", "up", "left"});
+
 	void Awake () 
 	{
 		carRigidbody = GetComponent <Rigidbody>();
+		RightTurn.HorizontalAxis = this.HorizontalAxis;
+		RightTurn.VerticalAxis = this.VerticalAxis;
+
+		LeftTurn.HorizontalAxis = this.HorizontalAxis;
+		LeftTurn.VerticalAxis = this.VerticalAxis;
 	}
 	
 	void Update () 
 	{
-		powerInput = Input.GetAxis (VerticalAxis);
-		turnInput = Input.GetAxis (HorizontalAxis);
+		if (Input.GetKeyDown("joystick 1 button 0"))
+		{
+			powerInput += 0.1f;
+		}
+		if (Input.GetKeyDown("joystick 1 button 1"))
+		{
+			powerInput -= 0.1f;
+		}
+		powerInput = Mathf.Clamp(powerInput, -1, 1);
+		//Debug.Log (powerInput);
+		//powerInput = Input.GetAxis (VerticalAxis);
+
+		if (RightTurn.Check())
+		{
+			//Debug.Log("Right");
+			turnInput += 0.1f;
+		}
+		if (LeftTurn.Check())
+		{
+			//Debug.Log("Left");
+
+			turnInput -= 0.1f;
+		}
+		//turnInput = Input.GetAxis (HorizontalAxis);
+		//Debug.Log(turnInput);
 	}
 	
 	void FixedUpdate()
