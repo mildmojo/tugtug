@@ -1,0 +1,101 @@
+fileFormatVersion: 2
+guid: e9d2c43d6b0a44445a8228b8c6f4d3da
+ModelImporter:
+  serializedVersion: 16
+  fileIDToRecycleName:
+    100000: B_2_Flag
+    100002: B_2_Left_rutter
+    100004: B_2_right_rutter
+    100006: B_2_Stack_1
+    100008: B_2_Stack_2
+    100010: B_2_Stack_3
+    100012: B_2_Wheel
+    100014: //RootNode
+    400000: B_2_Flag
+    400002: B_2_Left_rutter
+    400004: B_2_right_rutter
+    400006: B_2_Stack_1
+    400008: B_2_Stack_2
+    400010: B_2_Stack_3
+    400012: B_2_Wheel
+    400014: //RootNode
+    2300000: B_2_Left_rutter
+    2300002: B_2_right_rutter
+    2300004: B_2_Stack_1
+    2300006: B_2_Stack_2
+    2300008: B_2_Stack_3
+    2300010: B_2_Wheel
+    2300012: //RootNode
+    2300014: B_2_Flag
+    3300000: B_2_Left_rutter
+    3300002: B_2_right_rutter
+    3300004: B_2_Stack_1
+    3300006: B_2_Stack_2
+    3300008: B_2_Stack_3
+    3300010: B_2_Wheel
+    3300012: //RootNode
+    3300014: B_2_Flag
+    4300000: B_2_Hull
+    4300002: B_2_Flag
+    4300004: B_2_Stack_1
+    4300006: B_2_Stack_2
+    4300008: B_2_Stack_3
+    4300010: B_2_Wheel
+    4300012: B_2_Left_rutter
+    4300014: B_2_right_rutter
+    9500000: //RootNode
+    13700000: B_2_Flag
+  materials:
+    importMaterials: 1
+    materialName: 0
+    materialSearch: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    optimizeGameObjects: 0
+    motionNodeName: 
+    animationCompression: 1
+    animationRotationError: .5
+    animationPositionError: .5
+    animationScaleError: .5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: .100000001
+    meshCompression: 0
+    addColliders: 0
+    importBlendShapes: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    weldVertices: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+  tangentSpace:
+    normalSmoothAngle: 60
+    splitTangentsAcrossUV: 1
+    normalImportMode: 0
+    tangentImportMode: 1
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    human: []
+    skeleton: []
+    armTwist: .5
+    foreArmTwist: .5
+    upperLegTwist: .5
+    legTwist: .5
+    armStretch: .0500000007
+    legStretch: .0500000007
+    feetSpacing: 0
+    rootMotionBoneName: 
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 0
+  additionalBone: 0
+  userData: 
