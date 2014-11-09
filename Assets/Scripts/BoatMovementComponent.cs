@@ -11,6 +11,8 @@ public class BoatMovementComponent : MonoBehaviour {
 	public GameObject[] Wheels;
 	public GameObject Rutter;
 	public GameObject Flag;
+	public string HorizontalAxis = "Horizontal";
+	public string VerticalAxis = "Vertical";
 	private float powerInput;
 	private float turnInput;
 	private Rigidbody carRigidbody;
@@ -22,8 +24,8 @@ public class BoatMovementComponent : MonoBehaviour {
 	
 	void Update () 
 	{
-		powerInput = Input.GetAxis ("Vertical");
-		turnInput = Input.GetAxis ("Horizontal");
+		powerInput = Input.GetAxis (VerticalAxis);
+		turnInput = Input.GetAxis (HorizontalAxis);
 	}
 	
 	void FixedUpdate()
@@ -68,13 +70,20 @@ public class BoatMovementComponent : MonoBehaviour {
 		{
 			Wheels[i].transform.Rotate(0, powerInput, 0);
 		}
+
 		Quaternion rot = Quaternion.identity;
-		rot.eulerAngles = new Vector3(0, 0, 45 * -turnInput);
-		Rutter.transform.localRotation = rot;
 
-		rot = Quaternion.identity;
-		rot.eulerAngles = new Vector3(90, 0, 45 * -turnInput);
-		Flag.transform.localRotation = rot;
+		if (Rutter != null)
+		{
+			rot.eulerAngles = new Vector3(0, 0, 45 * -turnInput);
+			Rutter.transform.localRotation = rot;
+		}
 
+		if (Flag != null)
+		{
+			rot = Quaternion.identity;
+			rot.eulerAngles = new Vector3(90, 0, 45 * -turnInput);
+			Flag.transform.localRotation = rot;
+		}
 	}
 }
