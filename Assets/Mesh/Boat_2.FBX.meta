@@ -11,6 +11,7 @@ ModelImporter:
     100010: B_2_Stack_3
     100012: B_2_Wheel
     100014: //RootNode
+    100016: B_2_Hull
     400000: B_2_Flag
     400002: B_2_Left_rutter
     400004: B_2_right_rutter
@@ -19,6 +20,7 @@ ModelImporter:
     400010: B_2_Stack_3
     400012: B_2_Wheel
     400014: //RootNode
+    400016: B_2_Hull
     2300000: B_2_Left_rutter
     2300002: B_2_right_rutter
     2300004: B_2_Stack_1
@@ -27,6 +29,7 @@ ModelImporter:
     2300010: B_2_Wheel
     2300012: //RootNode
     2300014: B_2_Flag
+    2300016: B_2_Hull
     3300000: B_2_Left_rutter
     3300002: B_2_right_rutter
     3300004: B_2_Stack_1
@@ -35,6 +38,7 @@ ModelImporter:
     3300010: B_2_Wheel
     3300012: //RootNode
     3300014: B_2_Flag
+    3300016: B_2_Hull
     4300000: B_2_Hull
     4300002: B_2_Flag
     4300004: B_2_Stack_1
