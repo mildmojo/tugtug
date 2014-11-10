@@ -18,28 +18,26 @@ public class KeyCombo
 	public bool Check()
 	{
 		if (Time.time > timeLastButtonPressed + allowedTimeBetweenButtons) currentIndex = 0;
+		if (currentIndex < buttons.Length)
 		{
-			if (currentIndex < buttons.Length)
+			if ((buttons[currentIndex] == "down" && Input.GetAxisRaw(VerticalAxis) <= -0.8) ||
+			    (buttons[currentIndex] == "up" && Input.GetAxisRaw(VerticalAxis) >= 0.8) ||
+			    (buttons[currentIndex] == "left" && Input.GetAxisRaw(HorizontalAxis) <= -0.8) ||
+			    (buttons[currentIndex] == "right" && Input.GetAxisRaw(HorizontalAxis) >= 0.8) ||
+			    (buttons[currentIndex] != "down" && buttons[currentIndex] != "up" && buttons[currentIndex] != "left" && buttons[currentIndex] != "right" && Input.GetButtonDown(buttons[currentIndex])))
 			{
-				if ((buttons[currentIndex] == "down" && Input.GetAxisRaw(VerticalAxis) <= -0.8) ||
-				    (buttons[currentIndex] == "up" && Input.GetAxisRaw(VerticalAxis) >= 0.8) ||
-				    (buttons[currentIndex] == "left" && Input.GetAxisRaw(HorizontalAxis) <= -0.8) ||
-				    (buttons[currentIndex] == "right" && Input.GetAxisRaw(HorizontalAxis) >= 0.8) ||
-				    (buttons[currentIndex] != "down" && buttons[currentIndex] != "up" && buttons[currentIndex] != "left" && buttons[currentIndex] != "right" && Input.GetButtonDown(buttons[currentIndex])))
-				{
-					timeLastButtonPressed = Time.time;
-					currentIndex++;
-				}
-				
-				if (currentIndex >= buttons.Length)
-				{
-					currentIndex = 0;
-					return true;
-				}
-				else return false;
+				timeLastButtonPressed = Time.time;
+				currentIndex++;
 			}
+			
+			if (currentIndex >= buttons.Length)
+			{
+				currentIndex = 0;
+				return true;
+			}
+			else return false;
 		}
-		
+
 		return false;
 	}
 }

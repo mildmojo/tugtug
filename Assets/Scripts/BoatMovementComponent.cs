@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Linq;
 
 public class BoatMovementComponent : MonoBehaviour {
 	
@@ -13,6 +14,7 @@ public class BoatMovementComponent : MonoBehaviour {
 	public GameObject Flag;
 	public string HorizontalAxis = "Horizontal";
 	public string VerticalAxis = "Vertical";
+	public string Joystick = "joystick 1";
 	private float powerInput;
 	private float turnInput;
 	private Rigidbody carRigidbody;
@@ -20,11 +22,18 @@ public class BoatMovementComponent : MonoBehaviour {
 	private KeyCombo RightTurn = new KeyCombo(new string[] {"down", "left", "up", "right"});
 	private KeyCombo LeftTurn = new KeyCombo(new string[] {"down", "right", "up", "left"});
 
+	private string[] AccelButtons;
+	private string[] DecelButtons;
+
 	private bool IsDone = false;
 
 	void Awake () 
 	{
 		carRigidbody = GetComponent <Rigidbody>();
+
+		AccelButtons = new string[] {Joystick + " button 2", Joystick + " button 3", Joystick + " button 4"};
+		DecelButtons = new string[] {Joystick + " button 0", Joystick + " button 1", Joystick + " button 5"};
+
 		RightTurn.HorizontalAxis = this.HorizontalAxis;
 		RightTurn.VerticalAxis = this.VerticalAxis;
 
@@ -40,11 +49,11 @@ public class BoatMovementComponent : MonoBehaviour {
 		}
 		else
 		{
-			if (Input.GetKeyDown("joystick 1 button 0"))
+			if (AccelButtons.Any(btn => Input.GetKeyDown(btn)))
 			{
 				powerInput += 0.1f;
 			}
-			if (Input.GetKeyDown("joystick 1 button 1"))
+			if (DecelButtons.Any(btn => Input.GetKeyDown(btn)))
 			{
 				powerInput -= 0.1f;
 			}
@@ -70,10 +79,10 @@ public class BoatMovementComponent : MonoBehaviour {
 	
 	void FixedUpdate()
 	{
-		Ray ray = new Ray (transform.position, -Vector3.up);
+		Ray ray = new Ray (transform.position, Vector3.down);
 		RaycastHit hit;
 
-		Debug.DrawRay(transform.position, -Vector3.up * hoverHeight, Color.red);
+		Debug.DrawRay(transform.position, Vector3.down * hoverHeight, Color.red);
 
 		if (Physics.Raycast(ray, out hit, hoverHeight, hoverMask))
 		{
