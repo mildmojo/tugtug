@@ -11,6 +11,7 @@ public class GameManager : MonoBehaviour
 	public GameObject P2Prefab;
 
 	public static List<GameObject> Players = new List<GameObject>();
+	public static List<float> PlayerTimes = new List<float>();
 
 	public void Start()
 	{
@@ -23,11 +24,13 @@ public class GameManager : MonoBehaviour
 		{
 			obj = GameObject.Instantiate(P1Prefab) as GameObject;
 			Players.Add(obj);
+			PlayerTimes.Add(float.PositiveInfinity);
 		}
 		if ((P2Prefab != null) && (GameManager.P2))
 		{
 			obj = GameObject.Instantiate(P2Prefab) as GameObject;
 			Players.Add(obj);
+			PlayerTimes.Add(float.PositiveInfinity);
 		}
 	}
 }
