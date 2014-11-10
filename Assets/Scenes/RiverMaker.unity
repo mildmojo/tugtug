@@ -172,9 +172,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   LinePrefab: {fileID: 100000, guid: 1f821985abb05fb498450785a80f3a4e, type: 2}
   RiverLength: 500
-  StepMax: 11.8999996
-  StepMin: 6.5
-  Stickiness: 0
+  StepMax: 6.5999999
+  StepMin: 2.5
+  Stickiness: .5
 --- !u!1 &666489860
 GameObject:
   m_ObjectHideFlags: 0
