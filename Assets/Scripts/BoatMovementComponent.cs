@@ -20,6 +20,8 @@ public class BoatMovementComponent : MonoBehaviour {
 	private KeyCombo RightTurn = new KeyCombo(new string[] {"down", "left", "up", "right"});
 	private KeyCombo LeftTurn = new KeyCombo(new string[] {"down", "right", "up", "left"});
 
+	private bool IsDone = false;
+
 	void Awake () 
 	{
 		carRigidbody = GetComponent <Rigidbody>();
@@ -32,17 +34,24 @@ public class BoatMovementComponent : MonoBehaviour {
 	
 	void Update () 
 	{
-		if (Input.GetKeyDown("joystick 1 button 0"))
+		if (IsDone)
 		{
-			powerInput += 0.1f;
+			powerInput = 0;
 		}
-		if (Input.GetKeyDown("joystick 1 button 1"))
+		else
 		{
-			powerInput -= 0.1f;
+			if (Input.GetKeyDown("joystick 1 button 0"))
+			{
+				powerInput += 0.1f;
+			}
+			if (Input.GetKeyDown("joystick 1 button 1"))
+			{
+				powerInput -= 0.1f;
+			}
+			powerInput = Mathf.Clamp(powerInput, -1, 1);
+			//Debug.Log (powerInput);
+			//powerInput = Input.GetAxis (VerticalAxis);
 		}
-		powerInput = Mathf.Clamp(powerInput, -1, 1);
-		//Debug.Log (powerInput);
-		//powerInput = Input.GetAxis (VerticalAxis);
 
 		if (RightTurn.Check())
 		{
@@ -85,7 +94,10 @@ public class BoatMovementComponent : MonoBehaviour {
 			Vector3 appliedHoverForce = Vector3.up * hoverForce * proportionalHeight;
 			
 			//Debug.Log(appliedHoverForce);
-			carRigidbody.AddForce(appliedHoverForce, ForceMode.Force);
+			if (!IsDone)
+			{
+				carRigidbody.AddForce(appliedHoverForce, ForceMode.Force);
+			}
 		}
 		else
 		{
@@ -115,6 +127,18 @@ public class BoatMovementComponent : MonoBehaviour {
 			rot = Quaternion.identity;
 			rot.eulerAngles = new Vector3(0, 45 * turnInput, 0);
 			Flag.transform.localRotation = rot;
+		}
+	}
+
+	public int PlayerIndex;
+	
+	private void OnTriggerEnter(Collider other)
+	{
+		if (other.CompareTag("Finish"))
+		{
+			GameManager.PlayerTimes[PlayerIndex] = RaceManager.RaceTime;
+			Debug.Log(PlayerIndex.ToString() + " " + GameManager.PlayerTimes[PlayerIndex].ToString());
+			IsDone = true;
 		}
 	}
 }
