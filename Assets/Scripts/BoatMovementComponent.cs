@@ -1,16 +1,20 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 
 public class BoatMovementComponent : MonoBehaviour {
 	
 	public float speed = 90f;
 	public float turnSpeed = 5f;
+	public float turnAccelRate = 0.1f;
 	public float hoverForce = 65f;
 	public float hoverHeight = 3.5f;
+	public float lateralDragFactor = 0.2f;
 	public LayerMask hoverMask;
 	public GameObject[] Wheels;
-	public GameObject[] Rutters;
+	public GameObject[] Rudders;
+	public GameObject Hull;
 	public GameObject Flag;
 	public string HorizontalAxis = "Horizontal";
 	public string VerticalAxis = "Vertical";
@@ -19,8 +23,15 @@ public class BoatMovementComponent : MonoBehaviour {
 	private float turnInput;
 	private Rigidbody carRigidbody;
 
-	private KeyCombo RightTurn = new KeyCombo(new string[] {"down", "left", "up", "right"});
-	private KeyCombo LeftTurn = new KeyCombo(new string[] {"down", "right", "up", "left"});
+	private static string[] TURN_INPUTS = new string[] {"up", "down", "left", "right"};
+	private KeyCombo[] LeftTurns = {
+		new KeyCombo(new string[] {"up", "left", "down"}, TURN_INPUTS), 
+		new KeyCombo(new string[] {"down", "right", "up"}, TURN_INPUTS)
+	};
+	private KeyCombo[] RightTurns = {
+		new KeyCombo(new string[] {"up", "right", "down"}, TURN_INPUTS), 
+		new KeyCombo(new string[] {"down", "left", "up"}, TURN_INPUTS)
+	};
 
 	private string[] AccelButtons;
 	private string[] DecelButtons;
@@ -34,11 +45,10 @@ public class BoatMovementComponent : MonoBehaviour {
 		AccelButtons = new string[] {Joystick + " button 2", Joystick + " button 3", Joystick + " button 4"};
 		DecelButtons = new string[] {Joystick + " button 0", Joystick + " button 1", Joystick + " button 5"};
 
-		RightTurn.HorizontalAxis = this.HorizontalAxis;
-		RightTurn.VerticalAxis = this.VerticalAxis;
-
-		LeftTurn.HorizontalAxis = this.HorizontalAxis;
-		LeftTurn.VerticalAxis = this.VerticalAxis;
+		foreach (KeyCombo turn in RightTurns.Concat(LeftTurns)) {
+			turn.HorizontalAxis = this.HorizontalAxis;
+			turn.VerticalAxis = this.VerticalAxis;
+		}
 	}
 	
 	void Update () 
@@ -62,16 +72,16 @@ public class BoatMovementComponent : MonoBehaviour {
 			//powerInput = Input.GetAxis (VerticalAxis);
 		}
 
-		if (RightTurn.Check())
+		if (RightTurns.Any(turn => turn.Check()))
 		{
 			//Debug.Log("Right");
-			turnInput += 0.1f;
+			turnInput += turnAccelRate;
 		}
-		if (LeftTurn.Check())
+		if (LeftTurns.Any(turn => turn.Check()))
 		{
 			//Debug.Log("Left");
 
-			turnInput -= 0.1f;
+			turnInput -= turnAccelRate;
 		}
 		//turnInput = Input.GetAxis (HorizontalAxis);
 		//Debug.Log(turnInput);
@@ -79,56 +89,79 @@ public class BoatMovementComponent : MonoBehaviour {
 	
 	void FixedUpdate()
 	{
-		Ray ray = new Ray (transform.position, Vector3.down);
-		RaycastHit hit;
+		Mesh hullMesh = Hull.GetComponent<MeshFilter>().mesh;
+		float hullWidth = hullMesh.bounds.size.z;
+		float hullLength = hullMesh.bounds.size.x;
+		Vector3 center = carRigidbody.worldCenterOfMass;//Hull.renderer.bounds.center;
+		Vector3 keel = carRigidbody.worldCenterOfMass;// - transform.up * hullWidth / 4;
+		Quaternion rotateLeft = Quaternion.AngleAxis(-90, transform.up);
+		Quaternion rotateRight = Quaternion.AngleAxis(90, transform.up);
 
-		Debug.DrawRay(transform.position, Vector3.down * hoverHeight, Color.red);
+		Vector3[] outriggers = new Vector3[] {
+			center + transform.forward * hullLength * 0.5f,
+			center - transform.forward * hullLength * 0.5f,
+			center + rotateLeft * transform.forward * hullWidth * 0.5f,
+			center + rotateRight * transform.forward * hullWidth * 	0.5f
+		};
 
-		if (Physics.Raycast(ray, out hit, hoverHeight, hoverMask))
-		{
-			//Debug.Log(hit.collider.gameObject);
+		foreach (Vector3 outrigger in outriggers) {
+			// Test from up high to prevent boat from capsizing.
+			Vector3 tallrigger = outrigger + transform.up * 2;
+			Ray ray = new Ray(tallrigger, -transform.up);
+			RaycastHit hit;
 
-			float proportionalHeight;
-			float heightpercent = (hoverHeight - hit.distance) / hoverHeight;
-			//Debug.Log(rigidbody.velocity.y);
-			if (rigidbody.velocity.y <= 0)
+			Debug.DrawRay(tallrigger, -transform.up * hoverHeight,Color.red);
+
+			if (Physics.Raycast(ray, out hit, hoverHeight, hoverMask))
 			{
-				proportionalHeight = Mathf.Clamp(-rigidbody.velocity.y / 5f, 0f, 1f) + heightpercent;
-				//Debug.Log(proportionalHeight + " " + rigidbody.velocity.y + " " + heightpercent);
+				//Debug.Log(hit.collider.gameObject);
+
+				float proportionalHeight;
+				float heightpercent = (hoverHeight - hit.distance) / hoverHeight;
+				//Debug.Log(rigidbody.velocity.y);
+				if (rigidbody.velocity.y <= 0)
+				{
+					proportionalHeight = Mathf.Clamp(-rigidbody.velocity.y / 5f, 0f, 1f) + heightpercent;
+					//Debug.Log(proportionalHeight + " " + rigidbody.velocity.y + " " + heightpercent);
+				}
+				else
+				{
+					proportionalHeight = heightpercent;
+				}
+				Vector3 appliedHoverForce = transform.up * hoverForce * proportionalHeight;
+				
+				//Debug.Log(appliedHoverForce);
+				if (!IsDone)
+				{
+					carRigidbody.AddForceAtPosition(appliedHoverForce, outrigger, ForceMode.Force);
+				}
 			}
 			else
 			{
-				proportionalHeight = heightpercent;
-			}
-			Vector3 appliedHoverForce = Vector3.up * hoverForce * proportionalHeight;
-			
-			//Debug.Log(appliedHoverForce);
-			if (!IsDone)
-			{
-				carRigidbody.AddForce(appliedHoverForce, ForceMode.Force);
+				//Debug.Log("done");
+				//Vector3 appliedHoverForce = -Vector3.up * hoverForce / 10f;
+				//carRigidbody.AddForce(appliedHoverForce, ForceMode.Force);
 			}
 		}
-		else
-		{
-			//Debug.Log("done");
-			//Vector3 appliedHoverForce = -Vector3.up * hoverForce / 10f;
-			//carRigidbody.AddForce(appliedHoverForce, ForceMode.Force);
-		}
-		
+
 		carRigidbody.AddRelativeForce(0f, 0f, powerInput * speed);
 		carRigidbody.AddRelativeTorque(0f, turnInput * turnSpeed, 0f);
+		// Keel drag
+		Debug.DrawRay(keel, -Vector3.Project(carRigidbody.velocity, transform.right) * lateralDragFactor, Color.cyan);
+		carRigidbody.AddForceAtPosition(-Vector3.Project(carRigidbody.velocity, transform.right) * lateralDragFactor,
+		                                keel, ForceMode.Force);
 
 		for (int i = 0; i < Wheels.Length; i++)
 		{
-			Wheels[i].transform.Rotate(0, 0, -powerInput);
+			Wheels[i].transform.Rotate(0, 0, -powerInput * 2);
 		}
 
 		Quaternion rot = Quaternion.identity;
 
-		for (int i = 0; i < Rutters.Length; i++)
+		for (int i = 0; i < Rudders.Length; i++)
 		{
 			rot.eulerAngles = new Vector3(0, 45 * -turnInput, 0);
-			Rutters[i].transform.localRotation = rot;
+			Rudders[i].transform.localRotation = rot;
 		}
 
 		if (Flag != null)

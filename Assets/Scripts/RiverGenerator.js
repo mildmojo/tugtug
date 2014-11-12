@@ -2,6 +2,7 @@
 
 import System.Collections.Generic;
 import System.Linq;
+import MiniJSON;
 
 /*
  * All settings tuned against terrain size 2000 x 2000 x 100.
@@ -43,6 +44,7 @@ function Start () {
 	Debug.Log("N - New River");
 	Debug.Log("R - Regenerate current river");
 	Debug.Log("F - Flyover current river");
+	Debug.Log("E - Export (CURRENTLY BROKEN)");
 	Debug.Log("Delete - Delete selected river");
 	Debug.Log("[ - Previous river");
 	Debug.Log("] - Next river");
@@ -55,6 +57,8 @@ function Update () {
 		currentRiver.Regenerate();
 	} else if (Input.GetKeyDown(KeyCode.F)) {
 		Flyover(currentRiver);
+	} else if (Input.GetKeyDown(KeyCode.E)) {
+		ExportRiver(currentRiver);
 	} else if (Input.GetKeyDown(KeyCode.Delete)) {
 		DeleteRiver(currentRiver);
 	} else if (Input.GetKeyDown(KeyCode.LeftBracket)) {
@@ -151,6 +155,14 @@ function DeleteRiver(river : River) {
 	}
 }
 
+function ExportRiver(river : River) {
+	 var riverJSON = river.ToJSON();
+	 var timestamp = new Date().ToString("s");
+	 var riverPath = "Assets/Resources/river-" + timestamp + ".json";
+	 System.IO.File.WriteAllText(riverPath, riverJSON);
+	 Debug.Log("River saved to: " + riverPath);
+}
+
 function SinkTerrain() {
 	var riverBoundingBox = new BoundingBox(currentRiver.points);
 	var tData = riverTerrain.terrainData;
@@ -189,20 +201,6 @@ function SinkTerrain() {
 			}
 		}
 	}
-	
-//	var startBrushSize = 30;
-//	var startBrush : float[,] = new float[startBrushSize, startBrushSize];
-//	
-//	for (valY = 0; valY < startBrushSize; valY++) {
-//		for (valX = 0; valX < startBrushSize; valX++) {
-//			if (valY > startBrushSize * 0.3 && valY < startBrushSize * 0.6
-//			 && valX > startBrushSize * 0.3 && valX < startBrushSize * 0.6) {
-//				startBrush[valY, valX] = 0.2;
-//			} else {
-//				startBrush[valY, valX] = 0.6;
-//			}
-//		}
-//	}
 	
 	// Can't initialize a float[,] so create a float[][] and copy it by hand. THIS SUCKS.
 	var riverBrush : float[,] = new float[10,10];
@@ -383,6 +381,18 @@ class River extends ScriptableObject {
 		}
 		
 		return lineView;
+	}
+	
+	function ToJSON() {
+		var attrs = {
+			stepMin: stepMin,
+			stepMax: stepMax,
+			stickiness: stickiness,
+			length: length,
+			seed: seed
+		};
+		
+		return Json.Serialize(attrs);	
 	}
 }
 
