@@ -74,15 +74,14 @@ public class BoatMovementComponent : MonoBehaviour {
 
 		if (RightTurns.Any(turn => turn.Check()))
 		{
-			//Debug.Log("Right");
 			turnInput += turnAccelRate;
 		}
 		if (LeftTurns.Any(turn => turn.Check()))
 		{
-			//Debug.Log("Left");
-
 			turnInput -= turnAccelRate;
 		}
+		var turnLimit = 1.5f - 1.5f % turnAccelRate;
+		turnInput = Mathf.Clamp(turnInput, -turnLimit, turnLimit);
 		//turnInput = Input.GetAxis (HorizontalAxis);
 		//Debug.Log(turnInput);
 	}
@@ -145,7 +144,11 @@ public class BoatMovementComponent : MonoBehaviour {
 		}
 
 		carRigidbody.AddRelativeForce(0f, 0f, powerInput * speed);
-		carRigidbody.AddRelativeTorque(0f, turnInput * turnSpeed, 0f);
+//		carRigidbody.AddRelativeTorque(0f, turnInput * turnSpeed, 0f);
+		carRigidbody.angularVelocity = new Vector3(carRigidbody.angularVelocity.x, 
+		                                           Mathf.Lerp(carRigidbody.angularVelocity.y, turnInput, 0.01f),
+		                                           carRigidbody.angularVelocity.z);
+
 		// Keel drag
 		Debug.DrawRay(keel, -Vector3.Project(carRigidbody.velocity, transform.right) * lateralDragFactor, Color.cyan);
 		carRigidbody.AddForceAtPosition(-Vector3.Project(carRigidbody.velocity, transform.right) * lateralDragFactor,
