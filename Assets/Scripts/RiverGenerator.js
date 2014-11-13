@@ -67,6 +67,16 @@ function Update () {
 		SwitchRiver(1);
 	}
 	
+//	Debug.DrawRay(Terrain.activeTerrain.transform.position + Terrain.activeTerrain.terrainData.size / 2, Vector3.up * 100, Color.yellow);
+//	
+//	var riverBoundingBox = new BoundingBox(currentRiver.points);
+//	Debug.DrawRay(riverBoundingBox.center, Vector3.up * 100, Color.red);
+////Debug.Log("x,y,z: " + riverBoundingBox.size.x + "," + riverBoundingBox.size.y + "," + riverBoundingBox.size.z);
+//	Debug.DrawRay(riverBoundingBox.min, riverBoundingBox.max - riverBoundingBox.min, Color.blue);
+//	for (var i = 0; i < currentRiver.points.Count; i++) {
+//		Debug.DrawRay(currentRiver.points[i], Vector3.up * 100, Color.magenta);
+//	}
+
 	if (flyRiver != null) {
 		flyTimer += Time.deltaTime;
 		if (flyTimer > 0.02) {
@@ -333,7 +343,7 @@ class River extends ScriptableObject {
 		
 		// Create increment vector and use it to calculate the first point from origin.
 		var lastAngle = 0;
-		var lastVector = Vector3(0,0,2);
+		var lastVector = Vector3(0,0,1);
 		var lastPoint = lastVector;
 		points.Add(lastVector);
 
@@ -402,18 +412,21 @@ class BoundingBox {
 	var center : Vector3;
 	var size: Vector3;
 	
-	function BoundingBox(points) {
+	function BoundingBox(points : List.<Vector3>) {
+		min = points[0];
+		max = points[0];
+		
 		for (var pt : Vector3 in points) {
 			min.x = Mathf.Min(min.x, pt.x);
-			min.y = Mathf.Min(min.x, pt.y);
-			min.z = Mathf.Min(min.x, pt.z);
+			min.y = Mathf.Min(min.y, pt.y);
+			min.z = Mathf.Min(min.z, pt.z);
 			
 			max.x = Mathf.Max(max.x, pt.x);
-			max.y = Mathf.Max(max.x, pt.y);
-			max.z = Mathf.Max(max.x, pt.z);
+			max.y = Mathf.Max(max.y, pt.y);
+			max.z = Mathf.Max(max.z, pt.z);
 		}
 		
 		size = max - min;
-		center = Vector3((max.x - min.x) / 2, (max.y - min.y) / 2, (max.z - min.z) / 2);
+		center = min + (max - min) / 2; //Vector3((max.x - min.x) / 2, (max.y - min.y) / 2, (max.z - min.z) / 2);
 	}
 }
