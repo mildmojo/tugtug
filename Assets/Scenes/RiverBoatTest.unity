@@ -250,7 +250,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   speed: 2
   turnSpeed: 3
-  turnAccelRate: .100000001
+  turnAccelRate: .200000003
   hoverForce: 7
   hoverHeight: 4.80000019
   lateralDragFactor: .800000012
