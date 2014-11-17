@@ -329,6 +329,8 @@ MonoBehaviour:
   StepMax: 5
   StepMin: .699999988
   Stickiness: .592999995
+  files:
+  - {fileID: 4900000, guid: 41a3442e3fe5f31429b91fd0e436f3d5, type: 3}
 --- !u!1 &666489860
 GameObject:
   m_ObjectHideFlags: 0
