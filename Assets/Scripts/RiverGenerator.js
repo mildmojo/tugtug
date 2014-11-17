@@ -91,7 +91,7 @@ function Update () {
 			} else {
 				var camIdx = Mathf.Max(flyLastIdx - 20, 0);
 				Camera.main.transform.position = flyRiver.points[camIdx];
-				Camera.main.transform.position.y = 200;
+				Camera.main.transform.position.y = 300;
 				Camera.main.transform.LookAt(flyRiver.points[flyLastIdx] + Vector3(0,160,0));
 			}
 		}
@@ -360,17 +360,22 @@ class River extends ScriptableObject {
 			var newPoint = lastPoint + newVector;
 			
 			// If path crosses itself, back up and try this section again.
-			if (points.Any(function(pt) { return (pt - newPoint).sqrMagnitude < newVector.sqrMagnitude * 0.9; })) {
-				var retryLength = Mathf.Min(points.Count, 35);
+			for (var ptIdx = 0; ptIdx < points.Count - 20; ptIdx++) {
+//			if (points.Any(function(pt) { return (pt - newPoint).sqrMagnitude < newVector.sqrMagnitude * 0.9; })) {
+				if ((points[ptIdx] - newPoint).sqrMagnitude < newVector.sqrMagnitude * 5) {
+					var retryLength = Mathf.Min(points.Count, 35);
 
-				i -= retryLength;
-				points.RemoveRange(points.Count - retryLength, retryLength);
-				
-				lastVector = points[points.Count - 1] - points[points.Count - 2];
-				lastPoint = points[points.Count - 1];
-				
-				newVector = Quaternion.AngleAxis(angle, Vector3.up) * lastVector;
-				newPoint = lastPoint + newVector;
+					i -= retryLength;
+					points.RemoveRange(points.Count - retryLength, retryLength);
+					
+					lastVector = points[points.Count - 1] - points[points.Count - 2];
+					lastPoint = points[points.Count - 1];
+					
+					newVector = Quaternion.AngleAxis(angle, Vector3.up) * lastVector;
+					newPoint = lastPoint + newVector;
+					
+					break;
+				}
 			}
 			
 			points.Add(newPoint);
