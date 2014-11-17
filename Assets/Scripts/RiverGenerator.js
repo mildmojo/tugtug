@@ -2,7 +2,6 @@
 
 import System.Collections.Generic;
 import System.Linq;
-import MiniJSON;
 
 /*
  * All settings tuned against terrain size 2000 x 2000 x 100.
@@ -21,6 +20,8 @@ var StepMin : float = 0f;
 @Range(0, 1)
 var Stickiness : float = 0f;
 
+var RiverFiles : List.<TextAsset>;
+
 private var currentRiver : River;
 private var rivers : List.<River>;
 private var renderers : List.<GameObject>;
@@ -32,6 +33,23 @@ private var cameraOriginPosition : Vector3;
 private var cameraOriginRotation : Quaternion;
 
 private var riverTerrain : Terrain;
+private var originalHeightMap : float[,] = null;
+
+// Add a button to the editor to sort the river file list by name.
+@CustomEditor (RiverGenerator)
+class RiverGeneratorFileSorter extends Editor {
+	function OnInspectorGUI () {
+		DrawDefaultInspector();
+		if (GUILayout.Button("Sort by name")) {
+			var currentTarget = target as RiverGenerator;
+			currentTarget.RiverFiles = currentTarget.RiverFiles.OrderBy(function(x) { return x.name; }).ToList();
+		}
+	}
+
+	function compareNames(a : TextAsset, b : TextAsset) : int {
+		return a.name.CompareTo(b.name);
+	}
+}
 
 function Start () {
 	rivers = new List.<River>();
@@ -40,11 +58,13 @@ function Start () {
 	cameraOriginRotation = Camera.main.transform.rotation;
 	
 	riverTerrain = Terrain.activeTerrain; //GameObject.Find("RiverTerrain").GetComponent.<Terrain>();
+	SaveTerrain();
 	
 	Debug.Log("N - New River");
 	Debug.Log("R - Regenerate current river");
 	Debug.Log("F - Flyover current river");
-	Debug.Log("E - Export (CURRENTLY BROKEN)");
+	Debug.Log("E - Export");
+	Debug.Log("I - Import files specified in editor");
 	Debug.Log("Delete - Delete selected river");
 	Debug.Log("[ - Previous river");
 	Debug.Log("] - Next river");
@@ -67,19 +87,9 @@ function Update () {
 		SwitchRiver(1);
 	}
 	
-//	Debug.DrawRay(Terrain.activeTerrain.transform.position + Terrain.activeTerrain.terrainData.size / 2, Vector3.up * 100, Color.yellow);
-//	
-//	var riverBoundingBox = new BoundingBox(currentRiver.points);
-//	Debug.DrawRay(riverBoundingBox.center, Vector3.up * 100, Color.red);
-////Debug.Log("x,y,z: " + riverBoundingBox.size.x + "," + riverBoundingBox.size.y + "," + riverBoundingBox.size.z);
-//	Debug.DrawRay(riverBoundingBox.min, riverBoundingBox.max - riverBoundingBox.min, Color.blue);
-//	for (var i = 0; i < currentRiver.points.Count; i++) {
-//		Debug.DrawRay(currentRiver.points[i], Vector3.up * 100, Color.magenta);
-//	}
-
 	if (flyRiver != null) {
 		flyTimer += Time.deltaTime;
-		if (flyTimer > 0.02) {
+		if (flyTimer > 0.01) {
 			flyLastIdx = flyLastIdx + 1;
 			flyTimer = 0f;
 			if (flyLastIdx >= flyRiver.points.Count) {
@@ -89,12 +99,29 @@ function Update () {
 				flyLastIdx = 0;
 				flyTimer = 0;
 			} else {
-				var camIdx = Mathf.Max(flyLastIdx - 20, 0);
+				var camIdx = Mathf.Max(flyLastIdx - 60, 0);
 				Camera.main.transform.position = flyRiver.points[camIdx];
-				Camera.main.transform.position.y = 300;
-				Camera.main.transform.LookAt(flyRiver.points[flyLastIdx] + Vector3(0,160,0));
+				Camera.main.transform.position.y = 200;
+				Camera.main.transform.LookAt(flyRiver.points[flyLastIdx] + Vector3(0,60,0));
 			}
 		}
+	}
+}
+
+function OnApplicationQuit() {
+	RestoreTerrain();
+}
+
+function SaveTerrain() {
+	Debug.Log("save!");
+	var tData = riverTerrain.terrainData;
+	originalHeightMap = tData.GetHeights(0, 0, tData.heightmapWidth, tData.heightmapHeight);
+}
+
+function RestoreTerrain() {
+	Debug.Log("restore!");
+	if (originalHeightMap != null) {
+		riverTerrain.terrainData.SetHeights(0, 0, originalHeightMap);
 	}
 }
 
@@ -103,9 +130,11 @@ function SwitchRiver(incr : int) {
 	var newIdx = oldIdx + incr;
 	if (newIdx < 0) newIdx = rivers.Count - 1;
 	if (newIdx >= rivers.Count) newIdx = 0;
+	RestoreTerrain();
 	Blur(renderers[oldIdx]);
-	Focus(renderers[newIdx]);
 	currentRiver = rivers[newIdx];
+	Focus(renderers[newIdx]);
+	SinkTerrain();
 }
 
 function Flyover(river : River) {
@@ -113,7 +142,6 @@ function Flyover(river : River) {
 }
 
 function Focus(river : GameObject) {
-	
 	river.renderer.material.color = Color.yellow;
 }
 
@@ -125,14 +153,14 @@ function MakeRiver() {
 	// Read settings
 	// Plot points
 	// Draw lines?
-	var r : River = ScriptableObject.CreateInstance.<River>();
-	r.SetParams(StepMin, StepMax, Stickiness, RiverLength);
+//	var r : River = ScriptableObject.CreateInstance.<River>();
+	var r = new River(StepMin, StepMax, Stickiness, RiverLength);
 	r.Generate();
 	rivers.Add(r);
 	
-	var riverBounds = new BoundingBox(r.points);
+	var riverBounds = r.ToBoundingBox();
 //	var lineView = Instantiate(LinePrefab, Vector3.zero, Quaternion.identity);
-	var lineView = r.InstantiateRenderer(LinePrefab);
+	var lineView = InstantiateRenderer(r, LinePrefab);
 	renderers.Add(lineView);
 
 	if (currentRiver != null) {
@@ -142,10 +170,19 @@ function MakeRiver() {
 
 	currentRiver = r;
 	
+	RestoreTerrain();
 	SinkTerrain();
 }
 
 function DeleteRiver(river : River) {
+	SwitchRiver(1);
+	
+	// If there's only one river, switching will have no effect. Unset current river ref.
+	if (river == currentRiver) {
+		RestoreTerrain();
+		currentRiver = null;
+	}
+
 	for (var i = 0; i < rivers.Count; i++) {
 		if (rivers[i] == river) {
 			rivers.RemoveAt(i);
@@ -154,27 +191,18 @@ function DeleteRiver(river : River) {
 			break;
 		}
 	}
-//  Could not figure out how to make this work.
-//	rivers = Enumerable.Except(rivers, [river]) as List.<River>;
-	if (river == currentRiver) {
-		if (rivers.Count > 0) {
-			currentRiver = rivers[rivers.Count - 1];
-		} else {
-			currentRiver = null;
-		}
-	}
 }
 
 function ExportRiver(river : River) {
 	 var riverJSON = river.ToJSON();
-	 var timestamp = new Date().ToString("s");
+	 var timestamp = System.DateTime.Now.ToString("yyyyMMdd-HHmmss");
 	 var riverPath = "Assets/Resources/river-" + timestamp + ".json";
 	 System.IO.File.WriteAllText(riverPath, riverJSON);
 	 Debug.Log("River saved to: " + riverPath);
 }
 
 function SinkTerrain() {
-	var riverBoundingBox = new BoundingBox(currentRiver.points);
+	var riverBoundingBox = currentRiver.ToBoundingBox();
 	var tData = riverTerrain.terrainData;
 	var tPos = riverTerrain.transform.position;
 	var tSize = tData.size;
@@ -182,6 +210,8 @@ function SinkTerrain() {
 	var i : int;
 	var valX : int;
 	var valY : int;
+
+		Debug.Log("sink!");
 
 	// Center the mass of river points over the terrain patch.
 	for (i = 0; i < currentRiver.points.Count; i++) {
@@ -191,7 +221,7 @@ function SinkTerrain() {
 	// Move the line preview to match.
 	var renderIdx = rivers.IndexOf(currentRiver);
 	var oldView = renderers[renderIdx];
-	renderers[renderIdx] = currentRiver.InstantiateRenderer(LinePrefab);
+	renderers[renderIdx] = InstantiateRenderer(currentRiver, LinePrefab);
 	Destroy(oldView);
 
 	var startBrush = MakeCircleBrush(30, 0.9, 1.0); // matrix size, inner val, outer val
@@ -308,130 +338,17 @@ function GetMeanVector(positions : List.<Vector3>) : Vector3 {
 	return Vector3(x / positions.Count, y / positions.Count, z / positions.Count);
 }
 
-class River extends ScriptableObject {
-	var stepMin : float;
-	var stepMax : float;
-	var stickiness : float;
-	var length : int;
+function InstantiateRenderer(river : River, linePrefab : GameObject) {
+	var points = river.points;
+	var lineView = Instantiate(linePrefab, Vector3.zero, Quaternion.identity);	
+	var renderer : LineRenderer = lineView.GetComponent.<LineRenderer>();
+	renderer.SetVertexCount(points.Count);
 	
-	var seed : float;
-	var points : List.<Vector3>;
-	
-	public function SetParams(stepmin : float, stepmax : float, sticky: float, rlen: int) {
-		stepMin = stepmin;
-		stepMax = stepmax;
-		stickiness = sticky;
-		length = rlen;
+	for (var i = 0; i < points.Count; i++) {
+		renderer.SetPosition(i, Vector3(points[i].x, 100, points[i].z));
 	}
 	
-	function Regenerate() {
-		Generate(seed);
-	}
-	
-	function Generate() {
-		Generate(Random.Range(0, 256000));
-	}
-	
-	function Generate(newSeed : float) {
-		// Randomize!
-		seed = newSeed;
-		Random.seed = seed;
-		
-		// Start at origin.
-		points = new List.<Vector3>();
-		points.Add(Vector3.zero);
-		
-		// Create increment vector and use it to calculate the first point from origin.
-		var lastAngle = 0;
-		var lastVector = Vector3(0,0,1);
-		var lastPoint = lastVector;
-		points.Add(lastVector);
-
-		for (var i = 0; i < length - 1; i++) {
-			var angle : float;
-			if (Random.value > stickiness) {
-				angle = Random.Range(stepMin, stepMax);
-				angle = Random.value > 0.5 ? -angle : angle;
-			} else {
-				angle = lastAngle;
-			}
-			
-			var newVector = Quaternion.AngleAxis(angle, Vector3.up) * lastVector;
-			var newPoint = lastPoint + newVector;
-			
-			// If path crosses itself, back up and try this section again.
-			for (var ptIdx = 0; ptIdx < points.Count - 20; ptIdx++) {
-//			if (points.Any(function(pt) { return (pt - newPoint).sqrMagnitude < newVector.sqrMagnitude * 0.9; })) {
-				if ((points[ptIdx] - newPoint).sqrMagnitude < newVector.sqrMagnitude * 5) {
-					var retryLength = Mathf.Min(points.Count, 35);
-
-					i -= retryLength;
-					points.RemoveRange(points.Count - retryLength, retryLength);
-					
-					lastVector = points[points.Count - 1] - points[points.Count - 2];
-					lastPoint = points[points.Count - 1];
-					
-					newVector = Quaternion.AngleAxis(angle, Vector3.up) * lastVector;
-					newPoint = lastPoint + newVector;
-					
-					break;
-				}
-			}
-			
-			points.Add(newPoint);
-
-			lastVector = newVector;
-			lastPoint = newPoint;
-			lastAngle = angle;
-		}
-	}
-	
-	function InstantiateRenderer(linePrefab : GameObject) {
-		var lineView = Instantiate(linePrefab, Vector3.zero, Quaternion.identity);	
-		var renderer : LineRenderer = lineView.GetComponent.<LineRenderer>();
-		renderer.SetVertexCount(points.Count);
-		
-		for (var i = 0; i < points.Count; i++) {
-			renderer.SetPosition(i, Vector3(points[i].x, 100, points[i].z));
-		}
-		
-		return lineView;
-	}
-	
-	function ToJSON() {
-		var attrs = {
-			stepMin: stepMin,
-			stepMax: stepMax,
-			stickiness: stickiness,
-			length: length,
-			seed: seed
-		};
-		
-		return Json.Serialize(attrs);	
-	}
+	return lineView;
 }
 
-class BoundingBox {
-	var min : Vector3;
-	var max : Vector3;
-	var center : Vector3;
-	var size: Vector3;
-	
-	function BoundingBox(points : List.<Vector3>) {
-		min = points[0];
-		max = points[0];
-		
-		for (var pt : Vector3 in points) {
-			min.x = Mathf.Min(min.x, pt.x);
-			min.y = Mathf.Min(min.y, pt.y);
-			min.z = Mathf.Min(min.z, pt.z);
-			
-			max.x = Mathf.Max(max.x, pt.x);
-			max.y = Mathf.Max(max.y, pt.y);
-			max.z = Mathf.Max(max.z, pt.z);
-		}
-		
-		size = max - min;
-		center = min + (max - min) / 2; //Vector3((max.x - min.x) / 2, (max.y - min.y) / 2, (max.z - min.z) / 2);
-	}
-}
+
