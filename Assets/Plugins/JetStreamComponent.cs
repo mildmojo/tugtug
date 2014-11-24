@@ -1,8 +1,8 @@
 ﻿using UnityEngine;
-using System.Collections;
 
 public class JetStreamComponent : MonoBehaviour {
-
+		
+	public float MaxStreamSpeed;
 	public Vector3 Force;
 	
 	private void OnTriggerEnter(Collider collider)
@@ -17,6 +17,9 @@ public class JetStreamComponent : MonoBehaviour {
 
 	private void AddForce(Collider collider)
 	{
-		collider.attachedRigidbody.AddForce(Force);
+		var body = collider.attachedRigidbody;
+		if (Vector3.Project(body.velocity, transform.forward).magnitude < MaxStreamSpeed) {
+			body.AddForce(Quaternion.LookRotation(transform.forward) * Force);
+		}
 	}
 }
