@@ -170,9 +170,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0928d0e08df9a1d49928548098ae9907, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  JetstreamPrefab: {fileID: 100000, guid: 081b8c658ae3ac247a012a9f98f617e7, type: 2}
+  JetstreamFrequency: 1
+  JetstreamStrength: .5
+  Water: {fileID: 1139121385}
   RiverFiles:
-  - {fileID: 4900000, guid: d94fed608b2f43c4db3c1dbd96fdc380, type: 3}
-  - {fileID: 4900000, guid: bef05c9b700792d45a24abd83d2cccbf, type: 3}
+  - {fileID: 4900000, guid: 47c23728dc9926d4e96ecbb5077751e0, type: 3}
+  - {fileID: 4900000, guid: ed186be233567ba4eab4a0dd790521a8, type: 3}
 --- !u!1 &848556157
 GameObject:
   m_ObjectHideFlags: 0

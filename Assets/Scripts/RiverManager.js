@@ -7,9 +7,24 @@ import System.Linq;
 @HideInInspector @System.NonSerialized
 public var CurrentRiver : River;
 
+// Center point for starting pool.
+@HideInInspector @System.NonSerialized
+public var StartPoolCenter : Vector3;
+
+// Center point for finish pool.
+@HideInInspector @System.NonSerialized
+public var FinishPoolCenter : Vector3;
+
+public var JetstreamPrefab : GameObject;
+public var JetstreamFrequency : int;
+public var JetstreamStrength : float;
+
+public var Water : GameObject;
+
 public var RiverFiles : List.<TextAsset>;
 
 private var rivers : List.<River>;
+private var jetstreams : List.<GameObject>;
 
 private var riverTerrain : Terrain;
 private var originalHeightMap : float[,];
@@ -47,7 +62,14 @@ function Update () {
 	} else if (Input.GetKeyDown(KeyCode.P)) {
 		PrevRiver();
 		Redraw();
-	}	
+	}
+	
+	if (CurrentRiver) {
+		Debug.DrawRay(CurrentRiver.points.First(), Vector3.up * 30, Color.magenta);
+		Debug.DrawRay(CurrentRiver.points.Last(), Vector3.up * 30, Color.magenta);
+		Debug.DrawRay(CurrentRiver.points.First() + Vector3.up * 30, GetMeanVector(CurrentRiver.points.Take(60).ToList()).normalized * -30, Color.green);
+		Debug.DrawRay(CurrentRiver.points.Last() + Vector3.up * 30, GetMeanVector(CurrentRiver.points.AsEnumerable().Reverse().Take(60).ToList()).normalized * -30, Color.green);
+	}
 }
 
 // Don't persist game-time terrain modifications to edit mode.
@@ -69,6 +91,8 @@ public function PrevRiver() {
 public function Redraw() {
 	RestoreTerrain();
 	SinkTerrain();
+	WipeJetstreams();
+	CreateJetstreams();
 }
 
 function IncrRiver(incr : int) {
@@ -106,23 +130,35 @@ function LoadRivers() {
 
 function SinkTerrain() {
 	var riverBoundingBox = CurrentRiver.ToBoundingBox();
+	var points : List.<Vector3> = CurrentRiver.points;
 	var tData = riverTerrain.terrainData;
 	var tPos = riverTerrain.transform.position;
 	var tSize = tData.size;
 	var tCenter = tPos + tSize / 2;
+	var worldUnitsPerMapPoint = Vector3(tData.size.x / tData.heightmapWidth, 0, tData.size.z / tData.heightmapHeight);
 	var i : int;
 	var valX : int;
 	var valY : int;
+	
+	tCenter.y = 0;
+	riverBoundingBox.center.y = 0;
 
 	// Center the mass of river points over the terrain patch.
-	for (i = 0; i < CurrentRiver.points.Count; i++) {
-		CurrentRiver.points[i] += tCenter - riverBoundingBox.center;
+	for (i = 0; i < points.Count; i++) {
+		points[i] += tCenter - riverBoundingBox.center;
 	}
 	
-	var startBrush = MakeCircleBrush(30, 0.9, 1.0); // matrix size, inner val, outer val
-	var startPoints = CircleAround(CurrentRiver.points.First(), 20, 24); // center, radius, point count
-	var finishPoints = CircleAround(CurrentRiver.points.Last(), 20, 24);
+	var startPoolSize = 40;
+	var finishPoolSize = 40;
 	
+	StartPoolCenter = GetStartCentroid(startPoolSize);
+	FinishPoolCenter = GetFinishCentroid(finishPoolSize);
+
+	var startBrush = MakeCircleBrush(startPoolSize, 0.9, 1.0); // matrix size, inner val, outer val
+	var finishBrush = MakeCircleBrush(finishPoolSize, 0.9, 1.0);
+	var startPoints = CircleAround(StartPoolCenter, startPoolSize * 0.66, 24); // center, radius, point count
+	var finishPoints = CircleAround(FinishPoolCenter, finishPoolSize * 0.66, 24);
+		
 	var valleyBrushSize = 50;
 	var valleyBrush : float[,] = new float[valleyBrushSize, valleyBrushSize];
 	
@@ -158,10 +194,10 @@ function SinkTerrain() {
 		}
 	}
 	
-	ApplyBrush(valleyBrush, riverTerrain, CurrentRiver.points);
-	ApplyBrush(riverBrush, riverTerrain, CurrentRiver.points);
+	ApplyBrush(valleyBrush, riverTerrain, points);
+	ApplyBrush(riverBrush, riverTerrain, points);
 	ApplyBrush(startBrush, riverTerrain, startPoints);
-	ApplyBrush(startBrush, riverTerrain, finishPoints);
+	ApplyBrush(finishBrush, riverTerrain, finishPoints);
 }
 
 function ApplyBrush(brush : float[,], terrain : Terrain, points : List.<Vector3> ) {
@@ -185,6 +221,7 @@ function ApplyBrush(brush : float[,], terrain : Terrain, points : List.<Vector3>
 	tData.SetHeights(0,0, heights);
 }
 
+// Create a 2D array of floats to represent a bowl-shaped heightmap.
 function MakeCircleBrush(brushSize : int, innerVal : float, outerVal : float) : float[,] {
 	var brush : float[,] = new float[brushSize, brushSize];
 	var range = outerVal - innerVal;
@@ -201,8 +238,8 @@ function MakeCircleBrush(brushSize : int, innerVal : float, outerVal : float) : 
 	return brush;
 }
 
-// Returns a list of points in a circle around `point`.
-function CircleAround(point : Vector3, radius: float, count : int) : List.<Vector3> {
+// Returns a list of `count` points `radius` away from `point` in a circle.
+function CircleAround(point : Vector3, radius : float, count : int) : List.<Vector3> {
 	var points = new List.<Vector3>();
 	var offset = Vector3.one * radius;
 	
@@ -212,6 +249,42 @@ function CircleAround(point : Vector3, radius: float, count : int) : List.<Vecto
 	}
 	
 	return points;
+}
+
+// Get average of vectors from first N points to first point (pointing toward start)
+// Normalize to unit vector
+// Multiply by percentage of start pool size in world coords
+// Add to first point to get center for startBrush circle
+function GetStartCentroid(startPoolSize : int) : Vector3 {
+	var tData = riverTerrain.terrainData;
+	var worldUnitsPerMapPoint = Vector3(tData.size.x / tData.heightmapWidth, 0, tData.size.z / tData.heightmapHeight);
+	var points = CurrentRiver.points;
+	
+	var pointFirst = points.First();
+	var startOffsetDir = GetMeanVector(points.Take(60).Select(function(pt, idx) { 
+		return pointFirst - pt;
+	}).ToList()).normalized;
+	var startOffsetMgn = startPoolSize * worldUnitsPerMapPoint.x * 0.45;
+	var startOffset = startOffsetDir * startOffsetMgn;
+	var startPoint = points.First() + startOffset;
+
+	return startPoint;
+}
+
+function GetFinishCentroid(finishPoolSize : int) : Vector3 {
+	var tData = riverTerrain.terrainData;
+	var worldUnitsPerMapPoint = Vector3(tData.size.x / tData.heightmapWidth, 0, tData.size.z / tData.heightmapHeight);
+	var points = CurrentRiver.points;
+
+	var pointLast = points.Last();
+	var finishOffsetDir = GetMeanVector(points.AsEnumerable().Reverse().Take(60).Select(function(pt, idx) { 
+		return pointLast - pt;
+	}).ToList()).normalized;
+	var finishOffsetMgn = finishPoolSize * worldUnitsPerMapPoint.x * 0.45;
+	var finishOffset = finishOffsetDir * finishOffsetMgn;
+	var finishPoint = points.Last() + finishOffset;
+
+	return finishPoint;
 }
 
 // http://answers.unity3d.com/questions/164257/find-the-average-of-10-vectors.html
@@ -231,3 +304,28 @@ function GetMeanVector(positions : List.<Vector3>) : Vector3 {
 	return Vector3(x / positions.Count, y / positions.Count, z / positions.Count);
 }
 
+function WipeJetstreams() {
+	for (var j in jetstreams) {
+		Destroy(j);
+	}
+	
+	jetstreams = new List.<GameObject>();
+}
+
+function CreateJetstreams() {
+	var points = CurrentRiver.points;
+	
+	for (var i = 0; i < points.Count - JetstreamFrequency; i++) {
+		if (i % JetstreamFrequency == 0) {
+			var point = points[i] + Vector3.up * Water.transform.position.y;
+			var lookAtIdx = i + JetstreamFrequency;
+			var direction = lookAtIdx > points.Count ? point - points[i-1] : points[lookAtIdx] - point;
+			var jetstream = Instantiate(JetstreamPrefab, point, Quaternion.LookRotation(direction)) as GameObject;
+			jetstream.transform.localScale.x = 45;
+			jetstream.transform.localScale.y = 1;
+			jetstream.GetComponent.<JetStreamComponent>().Force.z = JetstreamStrength;
+			jetstreams.Add(jetstream);
+		}
+	}
+	
+}
