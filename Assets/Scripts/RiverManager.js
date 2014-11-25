@@ -58,10 +58,8 @@ function Update () {
 	// For testing only. Remove this code when actual level selection is in place.
 	if (Input.GetKeyDown(KeyCode.N)) {
 		NextRiver();
-		Redraw();
 	} else if (Input.GetKeyDown(KeyCode.P)) {
 		PrevRiver();
-		Redraw();
 	}
 	
 	if (CurrentRiver) {
@@ -77,14 +75,20 @@ function OnApplicationQuit() {
 	RestoreTerrain();
 }
 
-// Selects the next river, but doesn't repaint the terrain.
+// Selects the next river and repaints the terrain.
 public function NextRiver() {
 	IncrRiver(1);
+	Redraw();
+	SendMessage("SetRiverPoints", CurrentRiver.points);
+	SendMessage("SetSpawnPoint", StartPoolCenter);
 }
 
-// Selects the previous river, but doesn't repaint the terrain.
+// Selects the previous river and repaints the terrain.
 public function PrevRiver() {
 	IncrRiver(-1);
+	Redraw();
+	SendMessage("SetRiverPoints", CurrentRiver.points);
+	SendMessage("SetSpawnPoint", StartPoolCenter);
 }
 
 // Repaints the terrain.
@@ -96,8 +100,13 @@ public function Redraw() {
 }
 
 function IncrRiver(incr : int) {
-	var oldIdx = rivers.IndexOf(CurrentRiver);
-	var newIdx = oldIdx + incr;
+	var newIdx : int;
+	if (CurrentRiver) {
+		var oldIdx = rivers.IndexOf(CurrentRiver);
+		newIdx = oldIdx + incr;
+	} else {
+		newIdx = 0;
+	}
 	if (newIdx < 0) newIdx = rivers.Count - 1;
 	if (newIdx >= rivers.Count) newIdx = 0;
 	CurrentRiver = rivers[newIdx];

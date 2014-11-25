@@ -18,13 +18,14 @@ public class CameraController : MonoBehaviour {
 		GameObject frontPlayer = getFrontPlayer();
 		Camera.main.transform.LookAt(frontPlayer.transform);
 
-		Vector3 offset = frontPlayer.transform.position + CameraOffset;
-		float dist = (Camera.main.transform.position - offset).magnitude;
+		var boatRotation = Quaternion.LookRotation(frontPlayer.transform.forward);
+		Vector3 cameraPos = frontPlayer.transform.position + boatRotation * CameraOffset;
+		float dist = (Camera.main.transform.position - cameraPos).magnitude;
 		//Debug.Log(dist.ToString() + " " + CameraOffset.magnitude.ToString());
 		if (CameraOffset.magnitude < dist)
 		{
 			//Debug.Log("slerping");
-			Camera.main.transform.position = Vector3.Lerp(Camera.main.transform.position, offset, Time.deltaTime / 0.5f);
+			Camera.main.transform.position = Vector3.Lerp(Camera.main.transform.position, cameraPos, Time.deltaTime);
 			//Debug.Break();
 		}
 	}
