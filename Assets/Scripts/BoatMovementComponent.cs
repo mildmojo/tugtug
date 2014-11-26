@@ -24,14 +24,8 @@ public class BoatMovementComponent : MonoBehaviour {
 	private Rigidbody carRigidbody;
 
 	private static string[] TURN_INPUTS = new string[] {"up", "down", "left", "right"};
-	private KeyCombo[] LeftTurns = {
-		new KeyCombo(new string[] {"up", "left", "down"}, TURN_INPUTS), 
-		new KeyCombo(new string[] {"down", "right", "up"}, TURN_INPUTS)
-	};
-	private KeyCombo[] RightTurns = {
-		new KeyCombo(new string[] {"up", "right", "down"}, TURN_INPUTS), 
-		new KeyCombo(new string[] {"down", "left", "up"}, TURN_INPUTS)
-	};
+	private KeyCombo[] LeftTurns;
+	private KeyCombo[] RightTurns;
 
 	private string[] AccelButtons;
 	private string[] DecelButtons;
@@ -41,6 +35,15 @@ public class BoatMovementComponent : MonoBehaviour {
 	void Awake () 
 	{
 		carRigidbody = GetComponent <Rigidbody>();
+
+		LeftTurns = new KeyCombo[] {
+			new KeyCombo(HorizontalAxis, VerticalAxis, new string[] {"up", "left", "down"}, TURN_INPUTS), 
+			new KeyCombo(HorizontalAxis, VerticalAxis, new string[] {"down", "right", "up"}, TURN_INPUTS)
+		};
+		RightTurns = new KeyCombo[] {
+			new KeyCombo(HorizontalAxis, VerticalAxis, new string[] {"up", "right", "down"}, TURN_INPUTS), 
+			new KeyCombo(HorizontalAxis, VerticalAxis, new string[] {"down", "left", "up"}, TURN_INPUTS)
+		};
 
 		AccelButtons = new string[] {Joystick + " button 2", Joystick + " button 3", Joystick + " button 4"};
 		DecelButtons = new string[] {Joystick + " button 0", Joystick + " button 1", Joystick + " button 5"};
@@ -68,7 +71,7 @@ public class BoatMovementComponent : MonoBehaviour {
 				powerInput -= 0.1f;
 			}
 			powerInput = Mathf.Clamp(powerInput, -1, 1);
-			//Debug.Log (powerInput);
+//			Debug.Log (powerInput);
 			//powerInput = Input.GetAxis (VerticalAxis);
 		}
 
