@@ -5,8 +5,9 @@ using System.Linq;
 
 public class KeyCombo
 {
-	public string VerticalAxis = "Vertical";
-	public string HorizontalAxis = "Horizontal";
+	public string VerticalAxis;
+	public string HorizontalAxis;
+	public string axisName;
 	public string[] buttons;
 	public string[] buttonWhitelist;
 	private int currentIndex = 0; //moves along the array as buttons are pressed
@@ -14,13 +15,15 @@ public class KeyCombo
 	public float allowedTimeBetweenButtons = 0.3f; //tweak as needed
 	private float timeLastButtonPressed;
 
-	public KeyCombo(string[] btns) : this(btns, new string[0]) {
+	public KeyCombo(string axisX, string axisY, string[] btns) : this(axisX, axisY, btns, new string[0]) {
 	}
 
-	public KeyCombo(string[] btns, string[] whitelist)
+	public KeyCombo(string axisX, string axisY, string[] btns, string[] whitelist)
 	{
 		buttons = btns;
 		buttonWhitelist = whitelist;
+		HorizontalAxis = axisX;
+		VerticalAxis = axisY;
 	}
 	
 	//usage: call this once a frame. when the combo has been completed, it will return true
@@ -56,8 +59,8 @@ public class KeyCombo
 
 		if (Input.GetAxisRaw(VerticalAxis) < -0.8) buttonsDown.Add("down");
 		if (Input.GetAxisRaw(VerticalAxis) >  0.8) buttonsDown.Add("up");
-		if (Input.GetAxisRaw(HorizontalAxis) < -0.8) buttonsDown.Add("left");
-		if (Input.GetAxisRaw(HorizontalAxis) >  0.8) buttonsDown.Add("right");
+		if (Input.GetAxisRaw(HorizontalAxis) > -0.8) buttonsDown.Add("left");
+		if (Input.GetAxisRaw(HorizontalAxis) <  0.8) buttonsDown.Add("right");
 
 		foreach (string button in buttons) {
 			if (Input.GetKey(button)) buttonsDown.Add(button);
