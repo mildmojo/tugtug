@@ -588,8 +588,8 @@ MonoBehaviour:
   - {fileID: 100004}
   Hull: {fileID: 100000}
   Flag: {fileID: 100018}
-  HorizontalAxis: Horizontal
-  VerticalAxis: Vertical
+  HorizontalAxis: Horizontal1
+  VerticalAxis: Vertical1
   Joystick: joystick 1
   PlayerIndex: 0
 --- !u!114 &11400006
