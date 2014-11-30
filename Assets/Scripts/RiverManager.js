@@ -23,11 +23,14 @@ public var Water : GameObject;
 
 public var RiverFiles : List.<TextAsset>;
 
+
 private var rivers : List.<River>;
 private var jetstreams : List.<GameObject>;
 
 private var riverTerrain : Terrain;
 private var originalHeightMap : float[,];
+
+private var waterElevation : float;
 
 // Add a button to the editor to sort the river file list by name.
 @CustomEditor (RiverManager)
@@ -46,6 +49,7 @@ class RiverManagerFileSorter extends Editor {
 }
 
 function Start () {
+	waterElevation = Water.transform.position.y;
 	riverTerrain = Terrain.activeTerrain;
 	SaveTerrain();
 	LoadRivers();
@@ -322,19 +326,27 @@ function WipeJetstreams() {
 }
 
 function CreateJetstreams() {
-	var points = CurrentRiver.points;
+	jetstreams = CreateAlong(CurrentRiver.points, JetstreamPrefab, JetstreamFrequency, waterElevation);
 	
-	for (var i = 0; i < points.Count - JetstreamFrequency; i++) {
-		if (i % JetstreamFrequency == 0) {
-			var point = points[i] + Vector3.up * Water.transform.position.y;
-			var lookAtIdx = i + JetstreamFrequency;
+	for (var i = 0; i < jetstreams.Count; i++) {
+		jetstreams[i].transform.localScale.x = 45;
+		jetstreams[i].transform.localScale.y = 1;
+		jetstreams[i].GetComponent.<JetStreamComponent>().Force.z = JetstreamStrength;
+	}
+}
+
+function CreateAlong(points : List.<Vector3>, prefab : GameObject, frequency : int, atElevation : float) : List.<GameObject> {
+	var collection = new List.<GameObject>();
+	
+	for (var i = 0; i < points.Count - frequency; i++) {
+		if (i % frequency == 0) {
+			var point = points[i] + Vector3.up * atElevation;
+			var lookAtIdx = i + frequency;
 			var direction = lookAtIdx > points.Count ? point - points[i-1] : points[lookAtIdx] - point;
-			var jetstream = Instantiate(JetstreamPrefab, point, Quaternion.LookRotation(direction)) as GameObject;
-			jetstream.transform.localScale.x = 45;
-			jetstream.transform.localScale.y = 1;
-			jetstream.GetComponent.<JetStreamComponent>().Force.z = JetstreamStrength;
-			jetstreams.Add(jetstream);
+			var gameObj = Instantiate(prefab, point, Quaternion.LookRotation(direction)) as GameObject;
+			collection.Add(gameObj);
 		}
 	}
 	
+	return collection;
 }

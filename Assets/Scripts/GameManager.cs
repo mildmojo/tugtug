@@ -12,6 +12,9 @@ public class GameManager : MonoBehaviour
 
 	public GameObject Water;
 
+	public GameObject CheckpointPrefab;
+	public int CheckpointFrequency = 1;
+
 	public List<GameObject> PlayerPrefabs = new List<GameObject>();
 
 	public static List<GameObject> Players = new List<GameObject>();
@@ -20,12 +23,15 @@ public class GameManager : MonoBehaviour
 	private bool playersSpawned = false;
 	private Vector3 spawnPoint = Vector3.zero;
 	private List<Vector3> riverPoints = null;
+	private List<GameObject> checkpoints = null;
+	private float waterElevation;
 
 	public void Start()
 	{
 #if UNITY_EDITOR
 		P1 = true;
 #endif
+		waterElevation = Water.transform.position.y;
 	}
 
 	void Update() {
@@ -46,6 +52,7 @@ public class GameManager : MonoBehaviour
 	// RiverManager will SendMessage to set river points. Because compilation order.
 	public void SetRiverPoints(List<Vector3> points) {
 		riverPoints = points;
+		CreateCheckpoints();
 	}
 
 	private void SpawnPlayers() {
@@ -80,4 +87,33 @@ public class GameManager : MonoBehaviour
 		playersSpawned = true;
 	}
 
+	private void CreateCheckpoints() {
+		checkpoints = CreateAlong(riverPoints, CheckpointPrefab, CheckpointFrequency, waterElevation);
+		
+		for (var i = 0; i < checkpoints.Count; i++) {
+			var scale = checkpoints[i].transform.localScale;
+			scale.x = 45;
+			scale.y = 1;
+			checkpoints[i].transform.localScale = scale;
+			var checkpointComponent = checkpoints[i].GetComponent<CheckpointComponent>();
+			checkpointComponent.gameManager = this;
+			checkpointComponent.id = i * CheckpointFrequency;
+		}
+	}
+	
+	private List<GameObject> CreateAlong(List<Vector3> points, GameObject prefab, int frequency, float atElevation) {
+		var collection = new List<GameObject>();
+		
+		for (var i = 0; i < points.Count - frequency; i++) {
+			if (i % frequency == 0) {
+				var point = points[i] + Vector3.up * atElevation;
+				var lookAtIdx = i + frequency;
+				var direction = lookAtIdx > points.Count ? point - points[i-1] : points[lookAtIdx] - point;
+				var gameObj = Instantiate(prefab, point, Quaternion.LookRotation(direction)) as GameObject;
+				collection.Add(gameObj);
+			}
+		}
+		
+		return collection;
+	}
 }
