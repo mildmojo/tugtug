@@ -18,6 +18,7 @@ public var FinishPoolCenter : Vector3;
 public var JetstreamPrefab : GameObject;
 public var JetstreamFrequency : int;
 public var JetstreamStrength : float;
+public var JetstreamMaxSpeed : float = 3f;
 
 public var Water : GameObject;
 
@@ -329,9 +330,12 @@ function CreateJetstreams() {
 	jetstreams = CreateAlong(CurrentRiver.points, JetstreamPrefab, JetstreamFrequency, waterElevation);
 	
 	for (var i = 0; i < jetstreams.Count; i++) {
-		jetstreams[i].transform.localScale.x = 45;
+		jetstreams[i].transform.localScale.x = 100;
 		jetstreams[i].transform.localScale.y = 1;
-		jetstreams[i].GetComponent.<JetStreamComponent>().Force.z = JetstreamStrength;
+		var settings = jetstreams[i].GetComponent.<JetStreamComponent>();
+		settings.Force.z = JetstreamStrength;
+		settings.MaxStreamSpeed = JetstreamMaxSpeed;
+//		settings.forward = i == 0 ? 
 	}
 }
 
@@ -340,10 +344,10 @@ function CreateAlong(points : List.<Vector3>, prefab : GameObject, frequency : i
 	
 	for (var i = 0; i < points.Count - frequency; i++) {
 		if (i % frequency == 0) {
-			var point = points[i] + Vector3.up * atElevation;
+			var point = points[i];
 			var lookAtIdx = i + frequency;
 			var direction = lookAtIdx > points.Count ? point - points[i-1] : points[lookAtIdx] - point;
-			var gameObj = Instantiate(prefab, point, Quaternion.LookRotation(direction)) as GameObject;
+			var gameObj = Instantiate(prefab, point + Vector3.up * atElevation, Quaternion.LookRotation(direction)) as GameObject;
 			collection.Add(gameObj);
 		}
 	}

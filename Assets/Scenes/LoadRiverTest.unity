@@ -175,7 +175,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   JetstreamPrefab: {fileID: 100000, guid: 081b8c658ae3ac247a012a9f98f617e7, type: 2}
   JetstreamFrequency: 1
-  JetstreamStrength: .5
+  JetstreamStrength: .25
+  JetstreamMaxSpeed: 1
   Water: {fileID: 1139121385}
   RiverFiles:
   - {fileID: 4900000, guid: 47c23728dc9926d4e96ecbb5077751e0, type: 3}
@@ -278,7 +279,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7b671192f1f887a4bb41b98645ba60f0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  CameraOffset: {x: 0, y: 20, z: -20}
+  CameraOffset: {x: 0, y: 65, z: -60}
+  FrontPlayerBias: .596000016
+  Snappiness: 100
 --- !u!1 &848556157
 GameObject:
   m_ObjectHideFlags: 0

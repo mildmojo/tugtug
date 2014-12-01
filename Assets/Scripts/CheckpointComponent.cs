@@ -17,4 +17,12 @@ public class CheckpointComponent : MonoBehaviour {
 	void Update () {
 	
 	}
+
+	void OnTriggerEnter(Collider collider) {
+		GameManager.EnterCheckpoint(id, collider.transform.root.gameObject);
+	}
+
+	void OnTriggerExit(Collider collider) {
+		GameManager.ExitCheckpoint(id, collider.transform.root.gameObject);
+	}
 }

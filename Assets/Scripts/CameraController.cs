@@ -6,6 +6,10 @@ using System.Linq;
 public class CameraController : MonoBehaviour {
 	public Vector3 CameraOffset;
 
+	[Range(0f, 1f)]
+	public float FrontPlayerBias = 0.75f;
+	public float Snappiness = 100f;
+
 	//[HideInInspector] [System.NonSerialized]
 	//public List<GameObject> Players = new List<GameObject>();
 	// Use this for initialization
@@ -15,23 +19,31 @@ public class CameraController : MonoBehaviour {
 	
 	// Update is called once per frame
 	void FixedUpdate () {
-		GameObject frontPlayer = getFrontPlayer();
-		Camera.main.transform.LookAt(frontPlayer.transform);
+		GameObject frontPlayer = getFrontPlayer() ?? GameManager.Players[0];
+		GameObject lastPlayer = getLastPlayer() ?? GameManager.Players[GameManager.Players.Count - 1];
 
-		var boatRotation = Quaternion.LookRotation(frontPlayer.transform.forward);
-		Vector3 cameraPos = frontPlayer.transform.position + boatRotation * CameraOffset;
-		float dist = (Camera.main.transform.position - cameraPos).magnitude;
-		//Debug.Log(dist.ToString() + " " + CameraOffset.magnitude.ToString());
-		if (CameraOffset.magnitude < dist)
-		{
-			//Debug.Log("slerping");
-			Camera.main.transform.position = Vector3.Lerp(Camera.main.transform.position, cameraPos, Time.deltaTime);
-			//Debug.Break();
-		}
+		var lookPosition = (frontPlayer.transform.position - lastPlayer.transform.position) * FrontPlayerBias + 
+			lastPlayer.transform.position;
+//		var playerRotation = Quaternion.LookRotation(frontPlayer.transform.forward);
+		var lookRotation = Quaternion.LookRotation(frontPlayer.transform.forward);
+		var currentPosition = Camera.main.transform.position;
+		var currentRotation = Camera.main.transform.rotation;
+
+		var targetPosition = frontPlayer.transform.position + lookRotation * CameraOffset;
+		var targetRotation = Quaternion.LookRotation(lookPosition - currentPosition);
+
+		Camera.main.transform.position = Vector3.Lerp(currentPosition, targetPosition, Snappiness / 100 * Time.deltaTime);
+		Camera.main.transform.rotation = Quaternion.Slerp(currentRotation, targetRotation, Snappiness / 100 * Time.deltaTime);
 	}
 
 	GameObject getFrontPlayer() {
-		return GameManager.Players[0];
-		//return Players.OrderByDescending(player => player.GetComponent<PlayerManager>().distanceTraveled).FirstOrDefault();
+		var standings = GameManager.GetStandings();
+		if (standings != null) Debug.Log(standings.Count);
+		return standings == null ? null : standings.First();
+	}
+
+	GameObject getLastPlayer() {
+		var standings = GameManager.GetStandings();
+		return standings == null ? null : standings.Last();
 	}
 }

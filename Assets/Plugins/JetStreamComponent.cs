@@ -4,7 +4,14 @@ public class JetStreamComponent : MonoBehaviour {
 		
 	public float MaxStreamSpeed;
 	public Vector3 Force;
+
+	[HideInInspector] [System.NonSerialized]
+	public Vector3 forward;
 	
+	void Update() {
+		Debug.DrawRay(transform.position, transform.forward * 5, Color.green);
+	}
+
 	private void OnTriggerEnter(Collider collider)
 	{
 		AddForce(collider);
