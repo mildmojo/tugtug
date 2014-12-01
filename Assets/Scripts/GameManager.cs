@@ -15,16 +15,56 @@ public class GameManager : MonoBehaviour
 	public GameObject CheckpointPrefab;
 	public int CheckpointFrequency = 1;
 
+	public static float RespawnDropHeight = 10f;
+	public static float RespawnVelocityPercentage = 0.4f;
+
 	public List<GameObject> PlayerPrefabs = new List<GameObject>();
 
 	public static List<GameObject> Players = new List<GameObject>();
 	public static List<float> PlayerTimes = new List<float>();
 
+	private static Dictionary<GameObject, List<int>> playerDistances = null;
+	
 	private bool playersSpawned = false;
 	private Vector3 spawnPoint = Vector3.zero;
 	private List<Vector3> riverPoints = null;
 	private List<GameObject> checkpoints = null;
 	private float waterElevation;
+
+	public static void EnterCheckpoint(int id, GameObject player) {
+//		Debug.Log("Entering Checkpoint!");
+		if (!playerDistances.ContainsKey(player)) {
+			playerDistances.Add(player, new List<int>());
+		}
+		// If only checkpoint ID is negative, it's the "last seen" checkpoint. Replace with the new one.
+		if (playerDistances[player].Count == 1 && playerDistances[player].First() < 0) {
+			playerDistances[player].Remove(playerDistances[player].First());
+		}
+		playerDistances[player].Add(id);
+	}
+	
+	public static void ExitCheckpoint(int id, GameObject player) {
+//		Debug.Log("Exiting Checkpoint!");
+		if (!playerDistances.ContainsKey(player)) return;
+		playerDistances[player].Remove(id);
+
+		// If there are no more checkpoints in the list, add this one as a negative to mean "last seen".
+		if (playerDistances[player].Count == 0) {
+			playerDistances[player].Add(-id);
+		}
+	}
+
+	public static List<GameObject> GetStandings() {
+		if (playerDistances.Count > 0) {
+			var standings = playerDistances
+				.OrderByDescending(pair => 
+					pair.Value.Select(distance => Mathf.Abs(distance)).Max()
+				).Select(pair => pair.Key).ToList();
+			return standings;
+		} else {
+			return null;
+		}
+	}
 
 	public void Start()
 	{
@@ -41,7 +81,12 @@ public class GameManager : MonoBehaviour
 
 		if (spawnPoint == Vector3.zero) {
 			SendMessage("NextRiver");
-		}	
+		}
+
+		foreach (var checkpoint in checkpoints) {
+			var checkLoc = checkpoint.transform.position;
+			checkpoint.transform.TransformPoint(new Vector3(checkLoc.x, waterElevation, checkLoc.z));
+		}
 	}
 
 	// RiverManager will SendMessage to set start point. Because compilation order.
@@ -56,17 +101,19 @@ public class GameManager : MonoBehaviour
 	}
 
 	private void SpawnPlayers() {
+		playerDistances = new Dictionary<GameObject, List<int>>();
+
 		// Instantiate.
 		for (var i = 0; i < MAX_PLAYERS; i++) {
 			var obj = Instantiate(PlayerPrefabs[i]) as GameObject;
 			Players.Add(obj);
 			PlayerTimes.Add(float.PositiveInfinity);
+			playerDistances.Add(obj, new List<int> {0});
 		}
 
 		// Formation width is N boats plus N-1 boat-sized spaces.
 		var formationWidth = 0f;
 		foreach (var boat in Players) {
-			var bounds = new Bounds();
 			formationWidth += 2 * boat.GetComponentInChildren<Collider>().bounds.size.x;
 		}
 		formationWidth -= Players.Last().GetComponentInChildren<Collider>().bounds.size.x;
@@ -92,7 +139,7 @@ public class GameManager : MonoBehaviour
 		
 		for (var i = 0; i < checkpoints.Count; i++) {
 			var scale = checkpoints[i].transform.localScale;
-			scale.x = 45;
+			scale.x = 100;
 			scale.y = 1;
 			checkpoints[i].transform.localScale = scale;
 			var checkpointComponent = checkpoints[i].GetComponent<CheckpointComponent>();
