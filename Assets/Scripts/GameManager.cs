@@ -87,6 +87,10 @@ public class GameManager : MonoBehaviour
 			var checkLoc = checkpoint.transform.position;
 			checkpoint.transform.TransformPoint(new Vector3(checkLoc.x, waterElevation, checkLoc.z));
 		}
+
+		if (Input.GetKeyDown(KeyCode.R)) {
+			SpawnPlayers();
+		}
 	}
 
 	// RiverManager will SendMessage to set start point. Because compilation order.
@@ -104,11 +108,16 @@ public class GameManager : MonoBehaviour
 		playerDistances = new Dictionary<GameObject, List<int>>();
 
 		// Instantiate.
-		for (var i = 0; i < MAX_PLAYERS; i++) {
+		for (var i = Players.Count; i < MAX_PLAYERS; i++) {
 			var obj = Instantiate(PlayerPrefabs[i]) as GameObject;
 			Players.Add(obj);
 			PlayerTimes.Add(float.PositiveInfinity);
 			playerDistances.Add(obj, new List<int> {0});
+		}
+
+		// Zero out rudder and throttle.
+		foreach (var player in Players) {
+			player.GetComponent<BoatMovementComponent>().ResetInputs();
 		}
 
 		// Formation width is N boats plus N-1 boat-sized spaces.

@@ -5,6 +5,7 @@ using System.Linq;
 
 public class BoatMovementComponent : MonoBehaviour {
 	
+	public int PlayerIndex;
 	public float speed = 90f;
 	public float turnSpeed = 5f;
 	public float turnAccelRate = 0.1f;
@@ -178,8 +179,11 @@ public class BoatMovementComponent : MonoBehaviour {
 		}
 	}
 
-	public int PlayerIndex;
-	
+	public void ResetInputs() {
+		powerInput = 0;
+		turnInput = 0;
+	}
+
 	private void OnTriggerEnter(Collider other)
 	{
 		if (other.CompareTag("Finish"))
