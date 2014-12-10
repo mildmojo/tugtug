@@ -16,3 +16,6 @@ Sample Assets/
 
 #Unity3D Generated File On Crash Reports
 sysinfo.txt
+
+# Sublime project files
+*.sublime-*
