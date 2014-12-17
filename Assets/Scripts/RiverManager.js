@@ -20,6 +20,9 @@ public var JetstreamFrequency : int;
 public var JetstreamStrength : float;
 public var JetstreamMaxSpeed : float = 3f;
 
+public var StartLinePrefab : GameObject;
+public var FinishLinePrefab : GameObject;
+
 public var Water : GameObject;
 
 public var RiverFiles : List.<TextAsset>;
@@ -27,6 +30,8 @@ public var RiverFiles : List.<TextAsset>;
 
 private var rivers : List.<River>;
 private var jetstreams : List.<GameObject>;
+private var startLine : GameObject;
+private var finishLine : GameObject;
 
 private var riverTerrain : Terrain;
 private var originalHeightMap : float[,];
@@ -54,7 +59,7 @@ function Start () {
 	riverTerrain = Terrain.activeTerrain;
 	SaveTerrain();
 	LoadRivers();
-	
+
 	Debug.Log("N - Next river");
 	Debug.Log("P - Previous river");
 }
@@ -66,7 +71,7 @@ function Update () {
 	} else if (Input.GetKeyDown(KeyCode.P)) {
 		PrevRiver();
 	}
-	
+
 	if (CurrentRiver) {
 		Debug.DrawRay(CurrentRiver.points.First(), Vector3.up * 30, Color.magenta);
 		Debug.DrawRay(CurrentRiver.points.Last(), Vector3.up * 30, Color.magenta);
@@ -102,6 +107,8 @@ public function Redraw() {
 	SinkTerrain();
 	WipeJetstreams();
 	CreateJetstreams();
+	WipeStartFinish();
+	CreateStartFinish();
 }
 
 function IncrRiver(incr : int) {
@@ -130,13 +137,13 @@ function RestoreTerrain() {
 
 function LoadRivers() {
 	rivers = new List.<River>();
-	
+
 	for (var file in RiverFiles) {
 		var river = new River(file.text);
 		river.Regenerate();
 		rivers.Add(river);
 	}
-	
+
 	if (rivers.Count > 0) {
 		CurrentRiver = rivers[0];
 	}
@@ -153,7 +160,7 @@ function SinkTerrain() {
 	var i : int;
 	var valX : int;
 	var valY : int;
-	
+
 	tCenter.y = 0;
 	riverBoundingBox.center.y = 0;
 
@@ -161,10 +168,10 @@ function SinkTerrain() {
 	for (i = 0; i < points.Count; i++) {
 		points[i] += tCenter - riverBoundingBox.center;
 	}
-	
+
 	var startPoolSize = 40;
 	var finishPoolSize = 40;
-	
+
 	StartPoolCenter = GetStartCentroid(startPoolSize);
 	FinishPoolCenter = GetFinishCentroid(finishPoolSize);
 
@@ -172,10 +179,10 @@ function SinkTerrain() {
 	var finishBrush = MakeCircleBrush(finishPoolSize, 0.9, 1.0);
 	var startPoints = CircleAround(StartPoolCenter, startPoolSize * 0.66, 24); // center, radius, point count
 	var finishPoints = CircleAround(FinishPoolCenter, finishPoolSize * 0.66, 24);
-		
+
 	var valleyBrushSize = 50;
 	var valleyBrush : float[,] = new float[valleyBrushSize, valleyBrushSize];
-	
+
 	for (valY = 0; valY < valleyBrushSize; valY++) {
 		for (valX = 0; valX < valleyBrushSize; valX++) {
 			if (valY > valleyBrushSize * 0.3 && valY < valleyBrushSize * 0.6
@@ -186,7 +193,7 @@ function SinkTerrain() {
 			}
 		}
 	}
-	
+
 	// Can't initialize a float[,] so create a float[][] and copy it by hand. THIS SUCKS.
 	var riverBrush : float[,] = new float[10,10];
 	var jagged = [
@@ -204,10 +211,10 @@ function SinkTerrain() {
 
 	for (var y = 0; y < 10; y++) {
 		for (var x = 0; x < 10; x++) {
-			riverBrush[x, y] = jagged[y][x];	
+			riverBrush[x, y] = jagged[y][x];
 		}
 	}
-	
+
 	ApplyBrush(valleyBrush, riverTerrain, points);
 	ApplyBrush(riverBrush, riverTerrain, points);
 	ApplyBrush(startBrush, riverTerrain, startPoints);
@@ -231,7 +238,7 @@ function ApplyBrush(brush : float[,], terrain : Terrain, points : List.<Vector3>
 			}
 		}
 	}
-	
+
 	tData.SetHeights(0,0, heights);
 }
 
@@ -239,7 +246,7 @@ function ApplyBrush(brush : float[,], terrain : Terrain, points : List.<Vector3>
 function MakeCircleBrush(brushSize : int, innerVal : float, outerVal : float) : float[,] {
 	var brush : float[,] = new float[brushSize, brushSize];
 	var range = outerVal - innerVal;
-	
+
 	for (var valY = 0; valY < brushSize; valY++) {
 		var rowVal = 1 - Mathf.Sin(Mathf.PI * valY / parseFloat(brushSize));
 		for (var valX = 0; valX < brushSize; valX++) {
@@ -256,12 +263,12 @@ function MakeCircleBrush(brushSize : int, innerVal : float, outerVal : float) : 
 function CircleAround(point : Vector3, radius : float, count : int) : List.<Vector3> {
 	var points = new List.<Vector3>();
 	var offset = Vector3.one * radius;
-	
+
 	for (var i = 0; i < count; i++) {
 		offset = Quaternion.AngleAxis(i / parseFloat(count) * 360, Vector3.up) * offset;
-		points.Add(point + offset);	
+		points.Add(point + offset);
 	}
-	
+
 	return points;
 }
 
@@ -273,9 +280,9 @@ function GetStartCentroid(startPoolSize : int) : Vector3 {
 	var tData = riverTerrain.terrainData;
 	var worldUnitsPerMapPoint = Vector3(tData.size.x / tData.heightmapWidth, 0, tData.size.z / tData.heightmapHeight);
 	var points = CurrentRiver.points;
-	
+
 	var pointFirst = points.First();
-	var startOffsetDir = GetMeanVector(points.Take(60).Select(function(pt, idx) { 
+	var startOffsetDir = GetMeanVector(points.Take(60).Select(function(pt, idx) {
 		return pointFirst - pt;
 	}).ToList()).normalized;
 	var startOffsetMgn = startPoolSize * worldUnitsPerMapPoint.x * 0.45;
@@ -291,7 +298,7 @@ function GetFinishCentroid(finishPoolSize : int) : Vector3 {
 	var points = CurrentRiver.points;
 
 	var pointLast = points.Last();
-	var finishOffsetDir = GetMeanVector(points.AsEnumerable().Reverse().Take(60).Select(function(pt, idx) { 
+	var finishOffsetDir = GetMeanVector(points.AsEnumerable().Reverse().Take(60).Select(function(pt, idx) {
 		return pointLast - pt;
 	}).ToList()).normalized;
 	var finishOffsetMgn = finishPoolSize * worldUnitsPerMapPoint.x * 0.45;
@@ -305,7 +312,7 @@ function GetFinishCentroid(finishPoolSize : int) : Vector3 {
 function GetMeanVector(positions : List.<Vector3>) : Vector3 {
 	if (positions.Count == 0)
 		return Vector3.zero;
-	
+
 	var x : float = 0f;
 	var y : float = 0f;
 	var z : float= 0f;
@@ -322,26 +329,46 @@ function WipeJetstreams() {
 	for (var j in jetstreams) {
 		Destroy(j);
 	}
-	
+
 	jetstreams = new List.<GameObject>();
 }
 
 function CreateJetstreams() {
 	jetstreams = CreateAlong(CurrentRiver.points, JetstreamPrefab, JetstreamFrequency, waterElevation);
-	
+
 	for (var i = 0; i < jetstreams.Count; i++) {
 		jetstreams[i].transform.localScale.x = 100;
 		jetstreams[i].transform.localScale.y = 1;
 		var settings = jetstreams[i].GetComponent.<JetStreamComponent>();
 		settings.Force.z = JetstreamStrength;
 		settings.MaxStreamSpeed = JetstreamMaxSpeed;
-//		settings.forward = i == 0 ? 
+//		settings.forward = i == 0 ?
 	}
+}
+
+function WipeStartFinish() {
+	if (startLine) Destroy(startLine);
+	if (finishLine) Destroy(finishLine);
+}
+
+function CreateStartFinish() {
+	var riverStart = CurrentRiver.points.First();
+	var riverStartForward = CurrentRiver.points.Skip(1).First() - StartPoolCenter;
+	var riverEnd = CurrentRiver.points.Last();
+	var riverEndForward = FinishPoolCenter - riverEnd;
+
+	startLine = Instantiate(StartLinePrefab);
+	startLine.transform.position = riverStart + Vector3.up * 12;
+	startLine.transform.rotation = Quaternion.LookRotation(riverStartForward) * Quaternion.AngleAxis(90, Vector3.up);
+
+	finishLine = Instantiate(FinishLinePrefab);
+	finishLine.transform.position = riverEnd + Vector3.up * 12;
+	finishLine.transform.rotation = Quaternion.LookRotation(riverEndForward) * Quaternion.AngleAxis(90, Vector3.up);
 }
 
 function CreateAlong(points : List.<Vector3>, prefab : GameObject, frequency : int, atElevation : float) : List.<GameObject> {
 	var collection = new List.<GameObject>();
-	
+
 	for (var i = 0; i < points.Count - frequency; i++) {
 		if (i % frequency == 0) {
 			var point = points[i];
@@ -351,6 +378,6 @@ function CreateAlong(points : List.<Vector3>, prefab : GameObject, frequency : i
 			collection.Add(gameObj);
 		}
 	}
-	
+
 	return collection;
 }

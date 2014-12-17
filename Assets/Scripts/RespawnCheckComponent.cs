@@ -14,9 +14,9 @@ public class RespawnCheckComponent : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-		
+
 	}
-	
+
 	// Update is called once per frame
 	void Update () {
 
@@ -31,7 +31,8 @@ public class RespawnCheckComponent : MonoBehaviour {
 
 		var standings = GameManager.GetStandings();
 		var frontPlayer = standings == null ? GameManager.Players[0] : standings.First();
-		
+
+		transform.root.gameObject.SendMessage("ResetInputs");
 		transform.root.position = frontPlayer.transform.position + Vector3.up * GameManager.RespawnDropHeight;
 		transform.root.rotation = Quaternion.LookRotation(frontPlayer.transform.forward);
 		transform.root.rigidbody.velocity = frontPlayer.rigidbody.velocity * GameManager.RespawnVelocityPercentage;

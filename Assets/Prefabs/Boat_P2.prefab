@@ -655,6 +655,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bf44b3381e6a74d29852952cf5f09278, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  PlayerIndex: 1
   speed: 2
   turnSpeed: 3
   turnAccelRate: .200000003
@@ -674,7 +675,6 @@ MonoBehaviour:
   HorizontalAxis: Horizontal2
   VerticalAxis: Vertical2
   Joystick: joystick 2
-  PlayerIndex: 1
 --- !u!198 &19800000
 ParticleSystem:
   m_ObjectHideFlags: 1
@@ -897,7 +897,7 @@ ParticleSystem:
     enabled: 1
     m_Type: 0
     rate:
-      scalar: 30
+      scalar: 20
       maxCurve:
         serializedVersion: 2
         m_Curve:
@@ -1884,7 +1884,7 @@ ParticleSystem:
     enabled: 1
     m_Type: 0
     rate:
-      scalar: 30
+      scalar: 20
       maxCurve:
         serializedVersion: 2
         m_Curve:
@@ -2871,7 +2871,7 @@ ParticleSystem:
     enabled: 1
     m_Type: 0
     rate:
-      scalar: 30
+      scalar: 20
       maxCurve:
         serializedVersion: 2
         m_Curve:
