@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 public class BoatMovementComponent : MonoBehaviour {
-	
+
 	public int PlayerIndex;
 	public float speed = 90f;
 	public float turnSpeed = 5f;
@@ -20,8 +20,8 @@ public class BoatMovementComponent : MonoBehaviour {
 	public string HorizontalAxis = "Horizontal";
 	public string VerticalAxis = "Vertical";
 	public string Joystick = "joystick 1";
-	private float powerInput;
-	private float turnInput;
+	public float powerInput;
+	public float turnInput;
 	private Rigidbody carRigidbody;
 
 	private static string[] TURN_INPUTS = new string[] {"up", "down", "left", "right"};
@@ -33,16 +33,16 @@ public class BoatMovementComponent : MonoBehaviour {
 
 	private bool IsDone = false;
 
-	void Awake () 
+	void Awake ()
 	{
 		carRigidbody = GetComponent <Rigidbody>();
 
 		LeftTurns = new KeyCombo[] {
-			new KeyCombo(HorizontalAxis, VerticalAxis, new string[] {"up", "left", "down"}, TURN_INPUTS), 
+			new KeyCombo(HorizontalAxis, VerticalAxis, new string[] {"up", "left", "down"}, TURN_INPUTS),
 			new KeyCombo(HorizontalAxis, VerticalAxis, new string[] {"down", "right", "up"}, TURN_INPUTS)
 		};
 		RightTurns = new KeyCombo[] {
-			new KeyCombo(HorizontalAxis, VerticalAxis, new string[] {"up", "right", "down"}, TURN_INPUTS), 
+			new KeyCombo(HorizontalAxis, VerticalAxis, new string[] {"up", "right", "down"}, TURN_INPUTS),
 			new KeyCombo(HorizontalAxis, VerticalAxis, new string[] {"down", "left", "up"}, TURN_INPUTS)
 		};
 
@@ -54,8 +54,8 @@ public class BoatMovementComponent : MonoBehaviour {
 			turn.VerticalAxis = this.VerticalAxis;
 		}
 	}
-	
-	void Update () 
+
+	void Update ()
 	{
 		if (IsDone)
 		{
@@ -89,7 +89,7 @@ public class BoatMovementComponent : MonoBehaviour {
 		//turnInput = Input.GetAxis (HorizontalAxis);
 		//Debug.Log(turnInput);
 	}
-	
+
 	void FixedUpdate()
 	{
 		Mesh hullMesh = Hull.GetComponent<MeshFilter>().mesh;
@@ -132,7 +132,7 @@ public class BoatMovementComponent : MonoBehaviour {
 					proportionalHeight = heightpercent;
 				}
 				Vector3 appliedHoverForce = transform.up * hoverForce * proportionalHeight;
-				
+
 				//Debug.Log(appliedHoverForce);
 				if (!IsDone)
 				{
@@ -149,7 +149,7 @@ public class BoatMovementComponent : MonoBehaviour {
 
 		carRigidbody.AddRelativeForce(0f, 0f, powerInput * speed);
 //		carRigidbody.AddRelativeTorque(0f, turnInput * turnSpeed, 0f);
-		carRigidbody.angularVelocity = new Vector3(carRigidbody.angularVelocity.x, 
+		carRigidbody.angularVelocity = new Vector3(carRigidbody.angularVelocity.x,
 		                                           Mathf.Lerp(carRigidbody.angularVelocity.y, turnInput, 0.01f),
 		                                           carRigidbody.angularVelocity.z);
 
@@ -182,6 +182,9 @@ public class BoatMovementComponent : MonoBehaviour {
 	public void ResetInputs() {
 		powerInput = 0;
 		turnInput = 0;
+		rigidbody.velocity = Vector3.zero;
+		rigidbody.angularVelocity = Vector3.zero;
+		IsDone = false;
 	}
 
 	private void OnTriggerEnter(Collider other)

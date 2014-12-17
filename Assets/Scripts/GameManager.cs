@@ -7,29 +7,32 @@ public class GameManager : MonoBehaviour
 {
 	private const int MAX_PLAYERS = 2;
 
+	public static GameManager Instance;
 	public static bool P1 = false;
 	public static bool P2 = false;
-
-	public GameObject Water;
-
-	public GameObject CheckpointPrefab;
-	public int CheckpointFrequency = 1;
 
 	public static float RespawnDropHeight = 10f;
 	public static float RespawnVelocityPercentage = 0.4f;
 
-	public List<GameObject> PlayerPrefabs = new List<GameObject>();
-
 	public static List<GameObject> Players = new List<GameObject>();
 	public static List<float> PlayerTimes = new List<float>();
 
+	public GameObject Water;
+	public GameObject UIBanner;
+
+	public GameObject CheckpointPrefab;
+	public int CheckpointFrequency = 1;
+
+	public List<GameObject> PlayerPrefabs = new List<GameObject>();
+
 	private static Dictionary<GameObject, List<int>> playerDistances = null;
-	
+
 	private bool playersSpawned = false;
 	private Vector3 spawnPoint = Vector3.zero;
 	private List<Vector3> riverPoints = null;
 	private List<GameObject> checkpoints = null;
 	private float waterElevation;
+	private TextController bannerText;
 
 	public static void EnterCheckpoint(int id, GameObject player) {
 //		Debug.Log("Entering Checkpoint!");
@@ -42,7 +45,7 @@ public class GameManager : MonoBehaviour
 		}
 		playerDistances[player].Add(id);
 	}
-	
+
 	public static void ExitCheckpoint(int id, GameObject player) {
 //		Debug.Log("Exiting Checkpoint!");
 		if (!playerDistances.ContainsKey(player)) return;
@@ -57,7 +60,7 @@ public class GameManager : MonoBehaviour
 	public static List<GameObject> GetStandings() {
 		if (playerDistances.Count > 0) {
 			var standings = playerDistances
-				.OrderByDescending(pair => 
+				.OrderByDescending(pair =>
 					pair.Value.Select(distance => Mathf.Abs(distance)).Max()
 				).Select(pair => pair.Key).ToList();
 			return standings;
@@ -66,12 +69,19 @@ public class GameManager : MonoBehaviour
 		}
 	}
 
+	void Awake() {
+		Instance = this;
+		playerDistances = new Dictionary<GameObject, List<int>>();
+		bannerText = UIBanner.GetComponent<TextController>();
+	}
+
 	public void Start()
 	{
 #if UNITY_EDITOR
 		P1 = true;
 #endif
 		waterElevation = Water.transform.position.y;
+		StartCoroutine("ShowBannerBegin");
 	}
 
 	void Update() {
@@ -97,11 +107,18 @@ public class GameManager : MonoBehaviour
 	public void SetSpawnPoint(Vector3 point) {
 		spawnPoint = point;
 	}
-	
+
 	// RiverManager will SendMessage to set river points. Because compilation order.
 	public void SetRiverPoints(List<Vector3> points) {
 		riverPoints = points;
 		CreateCheckpoints();
+	}
+
+	public void OnRaceFinish(Dictionary<GameObject, float> finishes) {
+Debug.Log("Finish!");
+		var winner = finishes.OrderBy(pair => pair.Value).First().Key;
+		var winnerName = "Player " + (Players.IndexOf(winner) + 1);
+		StartCoroutine("ShowBannerFinish", winnerName);
 	}
 
 	private void SpawnPlayers() {
@@ -145,7 +162,7 @@ public class GameManager : MonoBehaviour
 
 	private void CreateCheckpoints() {
 		checkpoints = CreateAlong(riverPoints, CheckpointPrefab, CheckpointFrequency, waterElevation);
-		
+
 		for (var i = 0; i < checkpoints.Count; i++) {
 			var scale = checkpoints[i].transform.localScale;
 			scale.x = 100;
@@ -156,10 +173,10 @@ public class GameManager : MonoBehaviour
 			checkpointComponent.id = i * CheckpointFrequency;
 		}
 	}
-	
+
 	private List<GameObject> CreateAlong(List<Vector3> points, GameObject prefab, int frequency, float atElevation) {
 		var collection = new List<GameObject>();
-		
+
 		for (var i = 0; i < points.Count - frequency; i++) {
 			if (i % frequency == 0) {
 				var point = points[i] + Vector3.up * atElevation;
@@ -169,7 +186,25 @@ public class GameManager : MonoBehaviour
 				collection.Add(gameObj);
 			}
 		}
-		
+
 		return collection;
+	}
+
+	private IEnumerator ShowBannerBegin() {
+		bannerText.SetText("Begin!");
+		bannerText.TweenIn(0.75f);
+		yield return new WaitForSeconds(2f);
+		bannerText.TweenOut(0.75f);
+	}
+
+	private IEnumerator ShowBannerFinish(string winner) {
+		bannerText.SetText("Winner: " + winner);
+		bannerText.TweenIn(0.75f);
+		yield return new WaitForSeconds(7f);
+		bannerText.TweenOut(0.75f);
+		SpawnPlayers();
+		RaceManager.Instance.Reset();
+		yield return new WaitForSeconds(2f);
+		StartCoroutine("ShowBannerBegin");
 	}
 }
